@@ -7,6 +7,8 @@
 
 #include "const-c.inc"
 
+#include "tree.h"
+
 MODULE = Tree::SizeBalanced		PACKAGE = Tree::SizeBalanced		
 
 INCLUDE: const-xs.inc
