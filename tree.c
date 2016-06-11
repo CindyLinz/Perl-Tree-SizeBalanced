@@ -2,79 +2,115 @@
 
 tree_t nil = { .size = 0, .left = &nil, .right = &nil };
 
-void maintain_larger_left(tree_t * t){
+tree_t * maintain_larger_left(tree_t * t){
     if( t->left->left->size > t->right->size )
-        rotate_right(t);
+        t = rotate_right(t);
     else if( t->left->right->size > t->right->size ){
-        rotate_left(t->left);
-        rotate_right(t);
+        t->left = rotate_left(t->left);
+        t = rotate_right(t);
     }
     else
-        return;
+        return t;
 
-    maintain_larger_left(t->left);
-    maintain_larger_right(t->right);
-    maintain_larger_left(t);
-    maintain_larger_right(t);
+    t->left = maintain_larger_left(t->left);
+    t->right = maintain_larger_right(t->right);
+    t = maintain_larger_left(t);
+    t = maintain_larger_right(t);
+    return t;
 }
 
-void maintain_larger_right(tree_t * t){
+tree_t * maintain_larger_right(tree_t * t){
     if( t->right->right->size > t->left->size )
-        rotate_left(t);
+        t = rotate_left(t);
     else if( t->right->left->size > t->left->size ){
-        rotate_right(t->right);
-        rotate_left(t);
+        t->right = rotate_right(t->right);
+        t = rotate_left(t);
     }
     else
-        return;
+        return t;
 
-    maintain_larger_left(t->left);
-    maintain_larger_right(t->right);
-    maintain_larger_left(t);
-    maintain_larger_right(t);
+    t->left = maintain_larger_left(t->left);
+    t->right = maintain_larger_right(t->right);
+    t = maintain_larger_left(t);
+    t = maintain_larger_right(t);
+    return t;
 }
 
-bool tree_delete_cell(tree_cntr_t * cntr, tree_t * tree, IV key){
+tree_t * tree_insert_subtree(tree_t * p, IV key, tree_t * new_tree){
+    ++p->size;
+    if( key >= p->key ){
+        if( p->right == &nil )
+            p->right = new_tree;
+        else{
+            p->right = tree_insert_subtree(p->right, key, new_tree);
+            p = maintain_larger_right(p);
+        }
+    }
+    else{
+        if( p->left == &nil )
+            p->left = new_tree;
+        else{
+            p->left = tree_insert_subtree(p->left, key, new_tree);
+            p = maintain_larger_left(p);
+        }
+    }
+    return p;
+}
+
+tree_t * tree_delete_subtree(tree_cntr_t * cntr, tree_t * tree, IV key){
+    tree_t * c;
     if( key >= tree->key ){
         if( tree->right == &nil )
-            return FALSE;
+            return NULL;
 
         if( tree->right->key == key ){
-            tree->right = tree_delete_root(cntr, tree->right);
-            maintain_larger_right(tree->right);
+            tree->right = maintain_larger_right(tree_delete_root(cntr, tree->right));
             --tree->size;
-            maintain_larger_left(tree);
-            return TRUE;
+            tree = maintain_larger_left(tree);
+            return tree;
         }
 
-        if( tree_delete_subtree(cntr, tree->right, key) ){
+        c = tree_delete_subtree(cntr, tree->right, key);
+        if( c ){
+            tree->right = c;
             --tree->size;
-            maintain_larger_left(tree);
-            return TRUE;
+            tree = maintain_larger_left(tree);
+            return tree;
         }
 
-        return FALSE;
+        return NULL;
     }
     else{
         if( tree->left == &nil )
-            return FALSE;
+            return NULL;
 
         if( tree->left->key == key ){
-            tree->left = tree_delete_root(cntr, tree->left);
-            maintain_larger_right(tree->left);
+            tree->left = maintain_larger_right(tree_delete_root(cntr, tree->left));
             --tree->size;
-            maintain_larger_right(tree);
-            return TRUE;
+            tree = maintain_larger_right(tree);
+            return tree;
         }
 
-        if( tree_delete_subtree(cntr, tree->left, key) ){
+        c = tree_delete_subtree(cntr, tree->left, key);
+        if( c ){
+            tree->left = c;
             --tree->size;
-            maintain_larger_right(tree);
-            return TRUE;
+            tree = maintain_larger_right(tree);
+            return tree;
         }
 
-        return FALSE;
+        return NULL;
     }
+}
+
+void tree_dump_subtree(int indent, tree_t * tree){
+    if( tree->right != &nil )
+        tree_dump_subtree(indent+1, tree->right);
+    for(int i=0; i<indent; ++i)
+        PerlIO_printf(PerlIO_stdout(), "  ");
+    PerlIO_printf(PerlIO_stdout(), "(%d, %d)\n", tree->key, tree->size);
+    if( tree->left != &nil )
+        tree_dump_subtree(indent+1, tree->left);
 }
 
 // 假設 tree 不是空的

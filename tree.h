@@ -5,6 +5,7 @@
 #include "perl.h"
 
 #define SEG_SIZE (512)
+#define TREE_SECRET (5673533590968723872LL)
 
 typedef union tree_t {
     struct {
@@ -24,6 +25,7 @@ typedef struct tree_seg_t {
 extern tree_t nil;
 
 typedef struct tree_cntr_t {
+    long long secret;
     tree_t * root; // (init 後, empty 前) 永不為空, 一開始指向 nil
     tree_t * free_slot;
     tree_seg_t * newest_seg;
@@ -40,6 +42,7 @@ static inline tree_t * init_tree_seg(tree_seg_t * seg, tree_seg_t * prev){
 }
 
 static inline void init_tree_cntr(tree_cntr_t * cntr){
+    cntr->secret = TREE_SECRET;
     cntr->root = &nil;
     cntr->newest_seg = NULL;
     cntr->free_slot = NULL;
@@ -79,7 +82,7 @@ static inline void free_cell(tree_cntr_t * cntr, tree_t * cell){
     cntr->free_slot = cell;
 }
 
-// 假設 right[t] 存在, return 新的 subtree root
+// 假設 t->right 存在, return 新的 subtree root
 static inline tree_t* rotate_left(tree_t* t){
     tree_t * c = t->right;
     t->right = c->left;
@@ -89,7 +92,7 @@ static inline tree_t* rotate_left(tree_t* t){
     return c;
 }
 
-// 假設 left[t] 存在, return 新的 subtree root
+// 假設 t->left 存在, return 新的 subtree root
 static inline tree_t* rotate_right(tree_t * t){
     tree_t * c = t->left;
     t->left = c->right;
@@ -99,9 +102,10 @@ static inline tree_t* rotate_right(tree_t * t){
     return c;
 }
 
-void maintain_larger_left(tree_t * t);
-void maintain_larger_right(tree_t * t);
+tree_t * maintain_larger_left(tree_t * t);
+tree_t * maintain_larger_right(tree_t * t);
 
+tree_t * tree_insert_subtree(tree_t * t, IV key, tree_t * new_tree);
 static inline void tree_insert(tree_cntr_t * cntr, IV key){
     tree_t * new_tree = allocate_cell(cntr, key);
 
@@ -110,49 +114,40 @@ static inline void tree_insert(tree_cntr_t * cntr, IV key){
         return;
     }
 
-    tree_t * p = cntr->root;
-    while(TRUE){
-        ++p->size;
-        if( key >= p->key ){
-            if( p->right == &nil ){
-                p->right = new_tree;
-                break;
-            }
-            p = p->right;
-        }
-        else{
-            if( p->left == &nil ){
-                p->left = new_tree;
-                break;
-            }
-            p = p->left;
-        }
-    }
-
-    if( key >= cntr->root->key )
-        maintain_larger_right(cntr->root);
-    else
-        maintain_larger_left(cntr->root);
+    cntr->root = tree_insert_subtree(cntr->root, key, new_tree);
 }
 
-bool tree_delete_subtree(tree_cntr_t * cntr, tree_t * tree, IV key);
+tree_t * tree_delete_subtree(tree_cntr_t * cntr, tree_t * tree, IV key);
 
 // 假設一給定的 tree 不是空的
 // 把子樹的最右節點拉上來成為子樹的 root, return 新的 root
+// 新子樹沒有右子樹, 而左子樹符合 SBTree 特性
 static inline tree_t * tree_raise_max_cell(tree_t * tree){
     tree_t * root = tree;
+
+    int step_count = 0;
 
     tree_t * parent = &nil;
     while( UNLIKELY(tree->right != &nil) ){
         --tree->size;
         parent = tree;
         tree = tree->right;
+        ++step_count;
     }
 
     if( LIKELY(parent != &nil) ){
         parent->right = tree->left;
         tree->left = root;
         tree->size = root->size + 1;
+
+        tree_t * stack[step_count];
+        for(int i=0; i<step_count; ++i){
+            stack[i] = root;
+            root = root->right;
+        }
+        for(int i=step_count-1; i>0; --i)
+            stack[i-1]->right = maintain_larger_left(stack[i]);
+        tree->left = maintain_larger_left(stack[0]);
     }
 
     return tree;
@@ -190,12 +185,21 @@ static inline bool tree_delete(tree_cntr_t * cntr, IV key){
     if( UNLIKELY(cntr->root == &nil) )
         return FALSE;
 
-    if( UNLIKELY(cntr->root->key == key) ){
-        cntr->root = tree_delete_root(cntr, cntr->root);
+    if( cntr->root->key == key ){
+        cntr->root = maintain_larger_right(tree_delete_root(cntr, cntr->root));
         return TRUE;
     }
 
-    return tree_delete_subtree(cntr, cntr->root, key);
+    tree_t * new_root = tree_delete_subtree(cntr, cntr->root, key);
+    if( new_root ){
+        cntr->root = new_root;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static inline int tree_size(tree_cntr_t * cntr){
+    return cntr->root->size;
 }
 
 static inline bool tree_find(tree_cntr_t * cntr, IV key){
@@ -267,7 +271,23 @@ static inline IV tree_find_ge(tree_cntr_t * cntr, IV not_found_key, IV key){
     return best;
 }
 
-static inline int tree_lt_count(tree_cntr_t * cntr, IV key){
+// 假設 tree 不是空的
+static inline IV tree_find_min(tree_cntr_t * cntr){
+    tree_t * t = cntr->root;
+    while( t->left != &nil )
+        t = t->left;
+    return t->key;
+}
+
+// 假設 tree 不是空的
+static inline IV tree_find_max(tree_cntr_t * cntr){
+    tree_t * t = cntr->root;
+    while( t->right != &nil )
+        t = t->right;
+    return t->key;
+}
+
+static inline int tree_count_lt(tree_cntr_t * cntr, IV key){
     tree_t * t = cntr->root;
     int count = 0;
     while( t != &nil ){
@@ -281,7 +301,7 @@ static inline int tree_lt_count(tree_cntr_t * cntr, IV key){
     return count;
 }
 
-static inline int tree_le_count(tree_cntr_t * cntr, IV key){
+static inline int tree_count_le(tree_cntr_t * cntr, IV key){
     tree_t * t = cntr->root;
     int count = 0;
     while( t != &nil ){
@@ -295,7 +315,7 @@ static inline int tree_le_count(tree_cntr_t * cntr, IV key){
     return count;
 }
 
-static inline int tree_gt_count(tree_cntr_t * cntr, IV key){
+static inline int tree_count_gt(tree_cntr_t * cntr, IV key){
     tree_t * t = cntr->root;
     int count = 0;
     while( t != &nil ){
@@ -309,7 +329,7 @@ static inline int tree_gt_count(tree_cntr_t * cntr, IV key){
     return count;
 }
 
-static inline int tree_ge_count(tree_cntr_t * cntr, IV key){
+static inline int tree_count_ge(tree_cntr_t * cntr, IV key){
     tree_t * t = cntr->root;
     int count = 0;
     while( t != &nil ){
@@ -324,7 +344,7 @@ static inline int tree_ge_count(tree_cntr_t * cntr, IV key){
 }
 
 // 假設 0 <= offset < root->size
-static inline IV tree_select_left(tree_cntr_t * cntr, int offset){
+static inline IV tree_skip_l(tree_cntr_t * cntr, int offset){
     tree_t * t = cntr->root;
     while(TRUE){
         if( offset == t->left->size )
@@ -339,7 +359,7 @@ static inline IV tree_select_left(tree_cntr_t * cntr, int offset){
 }
 
 // 假設 0 <= offset < root->size
-static inline IV tree_select_right(tree_cntr_t * cntr, int offset){
+static inline IV tree_skip_g(tree_cntr_t * cntr, int offset){
     tree_t * t = cntr->root;
     while(TRUE){
         if( offset == t->right->size )
@@ -351,6 +371,15 @@ static inline IV tree_select_right(tree_cntr_t * cntr, int offset){
             t = t->left;
         }
     }
+}
+
+void tree_dump_subtree(int indent, tree_t * tree);
+static inline void tree_dump(tree_cntr_t * cntr){
+    if( cntr->root == &nil ){
+        puts("(empty tree)");
+        return;
+    }
+    tree_dump_subtree(0, cntr->root);
 }
 
 bool tree_check_subtree_size(tree_t * tree);
