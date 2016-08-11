@@ -1,3 +1,4 @@
+// vim: filetype=xs
 #include "tree.h"
 
 tree_t nil = { .size = 0, .left = &nil, .right = &nil };
@@ -36,13 +37,15 @@ tree_t * maintain_larger_right(tree_t * t){
     return t;
 }
 
-tree_t * tree_insert_subtree(tree_t * p, IV key, tree_t * new_tree){
+#define GEN_C_BY_TYPE(TYPE) {{{
+
+tree_t * tree_insert_subtree_ ## TYPE(tree_cntr_t * cntr, tree_t * p, tree_key_t key, tree_t * new_tree){
     ++p->size;
-    if( key >= p->key ){
+    if( cmp_ ## TYPE(key, p->key, cntr->cmp) >= 0 ){
         if( p->right == &nil )
             p->right = new_tree;
         else{
-            p->right = tree_insert_subtree(p->right, key, new_tree);
+            p->right = tree_insert_subtree_ ## TYPE(cntr, p->right, key, new_tree);
             p = maintain_larger_right(p);
         }
     }
@@ -50,27 +53,27 @@ tree_t * tree_insert_subtree(tree_t * p, IV key, tree_t * new_tree){
         if( p->left == &nil )
             p->left = new_tree;
         else{
-            p->left = tree_insert_subtree(p->left, key, new_tree);
+            p->left = tree_insert_subtree_ ## TYPE(cntr, p->left, key, new_tree);
             p = maintain_larger_left(p);
         }
     }
     return p;
 }
 
-tree_t * tree_delete_subtree(tree_cntr_t * cntr, tree_t * tree, IV key){
+tree_t * tree_delete_subtree_ ## TYPE(tree_cntr_t * cntr, tree_t * tree, tree_key_t key){
     tree_t * c;
-    if( key >= tree->key ){
+    if( cmp_ ## TYPE(key, tree->key, cntr->cmp) >= 0 ){
         if( tree->right == &nil )
             return NULL;
 
-        if( tree->right->key == key ){
+        if( cmp_ ## TYPE(tree->right->key, key, cntr->cmp) == 0 ){
             tree->right = maintain_larger_right(tree_delete_root(cntr, tree->right));
             --tree->size;
             tree = maintain_larger_left(tree);
             return tree;
         }
 
-        c = tree_delete_subtree(cntr, tree->right, key);
+        c = tree_delete_subtree_ ## TYPE(cntr, tree->right, key);
         if( c ){
             tree->right = c;
             --tree->size;
@@ -84,14 +87,14 @@ tree_t * tree_delete_subtree(tree_cntr_t * cntr, tree_t * tree, IV key){
         if( tree->left == &nil )
             return NULL;
 
-        if( tree->left->key == key ){
+        if( cmp_ ## TYPE(tree->left->key, key, cntr->cmp) == 0 ){
             tree->left = maintain_larger_right(tree_delete_root(cntr, tree->left));
             --tree->size;
             tree = maintain_larger_right(tree);
             return tree;
         }
 
-        c = tree_delete_subtree(cntr, tree->left, key);
+        c = tree_delete_subtree_ ## TYPE(cntr, tree->left, key);
         if( c ){
             tree->left = c;
             --tree->size;
@@ -103,24 +106,26 @@ tree_t * tree_delete_subtree(tree_cntr_t * cntr, tree_t * tree, IV key){
     }
 }
 
-void tree_dump_subtree(int indent, tree_t * tree){
+void tree_dump_subtree_ ## TYPE(int indent, tree_t * tree){
     if( tree->right != &nil )
-        tree_dump_subtree(indent+1, tree->right);
+        tree_dump_subtree_ ## TYPE(indent+1, tree->right);
     for(int i=0; i<indent; ++i)
         PerlIO_printf(PerlIO_stdout(), "  ");
-    PerlIO_printf(PerlIO_stdout(), "(%d, %d)\n", tree->key, tree->size);
+    tree_dump_node_ ## TYPE(tree);
     if( tree->left != &nil )
-        tree_dump_subtree(indent+1, tree->left);
+        tree_dump_subtree_ ## TYPE(indent+1, tree->left);
 }
 
 // 假設 tree 不是空的
-bool tree_check_subtree_order(tree_t * tree){
-    if( tree->left != &nil && (tree->left->key > tree->key || !tree_check_subtree_order(tree->left)) )
+bool tree_check_subtree_order_ ## TYPE(tree_cntr_t * cntr, tree_t * tree){
+    if( tree->left != &nil && (cmp_ ## TYPE(tree->left->key, tree->key, cntr->cmp) > 0 || !tree_check_subtree_order_ ## TYPE(cntr, tree->left)) )
         return FALSE;
-    if( tree->right != &nil && (tree->key > tree->right->key || !tree_check_subtree_order(tree->right)) )
+    if( tree->right != &nil && (cmp_ ## TYPE(tree->key, tree->right->key, cntr->cmp) > 0 || !tree_check_subtree_order_ ## TYPE(cntr, tree->right)) )
         return FALSE;
     return TRUE;
 }
+
+}}}
 
 // 假設 tree 不是空的
 bool tree_check_subtree_size(tree_t * tree){
@@ -149,3 +154,7 @@ bool tree_check_subtree_balance(tree_t * tree){
         return FALSE;
     return TRUE;
 }
+
+GEN_C_BY_TYPE(iv)
+GEN_C_BY_TYPE(nv)
+GEN_C_BY_TYPE(sv)

@@ -40,3 +40,46 @@ else {
     copy ($fallback, $file) or die "Can't copy $fallback to $file: $!";
   }
 }
+
+for my $gen_filename ( <*.gen> ) {
+    my($filename) = $gen_filename =~ /^(.*)\.gen$/;
+
+    my($inf, $outf);
+
+    open $inf, $gen_filename;
+    my $source = do{
+        local $/;
+        <$inf>;
+    };
+    close $inf;
+
+    my @macro;
+    $source =~ s(#\s*define\s+(\w+)\s*\(([^()]*)\)\s*\{{3}(.*?)\}{3}){
+        my($name, $args, $body) = ($1, $2, $3);
+        my @arg = $args =~ /(\w+)/g;
+        push @macro, [$name, \@arg, $body];
+        ''
+    }ges;
+
+    for my $macro (@macro) {
+        my($name, $args, $code) = @$macro;
+        $source =~ s(([ \t]*)$name\s*\(([^()]*)\)){
+            my $indent = $1;
+            my $arg_values = $2;
+            my @arg_value = split /,/, $arg_values;
+
+            my $code = $code;
+            for my $i (0..$#{$args}) {
+                my $arg_label = $args->[$i];
+                my $arg_value = $arg_value[$i];
+                $code =~ s/(\s*##\s*|\b)$arg_label(\s*##\s*|\b)/$arg_value/g;
+            }
+            $code =~ s/^/$indent/gm;
+            $code . $indent;
+        }ges;
+    }
+
+    open $outf, ">$filename";
+    print $outf $source;
+    close $outf;
+}

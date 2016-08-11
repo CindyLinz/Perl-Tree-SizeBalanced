@@ -17,40 +17,8 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Tree::SizeBalanced ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
-our @EXPORT = qw(
-	
-);
 
 our $VERSION = '0.01';
-
-sub AUTOLOAD {
-    # This AUTOLOAD is used to 'autoload' constants from the constant()
-    # XS function.
-
-    my $constname;
-    our $AUTOLOAD;
-    ($constname = $AUTOLOAD) =~ s/.*:://;
-    croak "&Tree::SizeBalanced::constant not defined" if $constname eq 'constant';
-    my ($error, $val) = constant($constname);
-    if ($error) { croak $error; }
-    {
-	no strict 'refs';
-	# Fixed between 5.005_53 and 5.005_61
-#XXX	if ($] >= 5.00561) {
-#XXX	    *$AUTOLOAD = sub () { $val };
-#XXX	}
-#XXX	else {
-	    *$AUTOLOAD = sub { $val };
-#XXX	}
-    }
-    goto &$AUTOLOAD;
-}
 
 require XSLoader;
 XSLoader::load('Tree::SizeBalanced', $VERSION);
@@ -65,12 +33,14 @@ __END__
 
 =head1 NAME
 
-Tree::SizeBalanced - Perl extension for blah blah blah
+Tree::SizeBalanced - Size balanced binary search tree (XS implementation)
 
 =head1 SYNOPSIS
 
   use Tree::SizeBalanced;
-  blah blah blah
+
+  my $tree = Tree::SizeBalanced;
+  $tree->insert(1);
 
 =head1 DESCRIPTION
 
