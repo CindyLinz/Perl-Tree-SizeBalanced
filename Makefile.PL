@@ -2,7 +2,7 @@ use 5.022001;
 use ExtUtils::MakeMaker;
 
 my @key = qw(int num);
-my @value = qw(void int num);
+my @value = qw(void int num any);
 my @method;
 {
     my $f;

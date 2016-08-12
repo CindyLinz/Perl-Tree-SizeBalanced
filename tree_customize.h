@@ -68,6 +68,22 @@ static inline T(any) from_sv_any(SV * sv){
     return sv;
 }
 
+static inline T(void) copy_sv_void(SV * sv){
+    return NULL;
+}
+static inline T(int) copy_sv_int(SV * sv){
+    return SvIV(sv);
+}
+static inline T(num) copy_sv_num(SV * sv){
+    return SvNV(sv);
+}
+static inline T(str) copy_sv_str(SV * sv){
+    return newSVsv(sv);
+}
+static inline T(any) copy_sv_any(SV * sv){
+    return newSVsv(sv);
+}
+
 static inline SV** ret_int(SV ** SP, T(int) key){
     dTARGET;
     PUSHi(key);

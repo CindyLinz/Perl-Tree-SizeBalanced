@@ -37,7 +37,7 @@ SV ** KV(size)(pTHX_ SV** SP, SV *obj){
 
 SV ** KV(insert)(pTHX_ SV** SP, SV * obj, SV * key, SV * value){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
-    KV(tree_insert)(cntr, K(from_sv)(key), V(from_sv)(value));
+    KV(tree_insert)(cntr, K(copy_sv)(key), V(copy_sv)(value));
     return SP;
 }
 

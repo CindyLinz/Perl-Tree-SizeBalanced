@@ -21,7 +21,7 @@ our @ISA = qw(Exporter);
 our $VERSION = '0.01';
 
 for my $key (qw(int num)) {
-    for my $value (qw(void int num)) {
+    for my $value (qw(void int num any)) {
         require "Tree/SizeBalanced/$key\_$value.pm";
         no strict 'refs';
         my $new_func = \&{"Tree::SizeBalanced::$key\_$value\::new"};

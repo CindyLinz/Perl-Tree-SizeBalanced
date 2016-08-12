@@ -14,3 +14,8 @@
 #  include "tree_key_value.h"
 #  include "xs.h"
 #undef VALUE
+
+#define VALUE any
+#  include "tree_key_value.h"
+#  include "xs.h"
+#undef VALUE

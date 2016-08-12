@@ -194,9 +194,32 @@ static inline void KV(free_cell)(KV(tree_cntr_t) * cntr, KV(tree_t) * cell){
 }
 
 static inline void KV(empty_tree_cntr)(KV(tree_cntr_t) * cntr){
+#if I(KEY) == I(str) || I(KEY) == I(any) || I(VALUE) == I(str) || I(VALUE) == I(any)
+    KV(tree_t) * free_slot = cntr->free_slot;
+    while( free_slot ){
+        KV(tree_t) * next_free_slot = free_slot->free_slot;
+#   if I(KEY) == I(str) || I(KEY) == I(any)
+        free_slot->key = NULL;
+#   endif
+#   if I(VALUE) == I(str) || I(VALUE) == I(any)
+        free_slot->value = NULL;
+#   endif
+        free_slot = next_free_slot;
+    }
+#endif
     KV(tree_seg_t) * seg = cntr->newest_seg;
     while( seg ){
         KV(tree_seg_t) * prev = seg->prev_seg;
+#if I(KEY) == I(str) || I(KEY) == I(any) || I(VALUE) == I(str) || I(VALUE) == I(any)
+        for(int i=SEG_SIZE-1; i>=0; --i){
+#   if I(KEY) == I(str) || I(KEY) == I(any)
+            SvREFCNT_dec(seg->cell[i].key);
+#   endif
+#   if I(VALUE) == I(str) || I(VALUE) == I(any)
+            SvREFCNT_dec(seg->cell[i].value);
+#   endif
+        }
+#endif
         Safefree(seg);
         seg = prev;
     }

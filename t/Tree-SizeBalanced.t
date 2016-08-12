@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More; # tests => 801;
+use Test::More tests => 861;
 BEGIN { use_ok('Tree::SizeBalanced') };
 
 #########################
@@ -145,4 +145,15 @@ BEGIN { use_ok('Tree::SizeBalanced') };
     }
 }
 
-done_testing;
+{
+    my $tree = Tree::SizeBalanced->new_int_any;
+    for(1..10) {
+        $tree->insert($_, 'a'.$_);
+    }
+    for(1..10) {
+        my($found, $value) = $tree->find($_);
+        is($found, 1);
+        is($value, 'a'.$_);
+    }
+}
+
