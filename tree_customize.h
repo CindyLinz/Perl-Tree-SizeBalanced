@@ -127,7 +127,7 @@ static inline NV cmp_num(T(num) a, T(num) b, cmp_t cmp){
     return a - b;
 }
 static inline IV cmp_str(T(str) a, T(str) b, cmp_t cmp){
-    return cmp(a, b); // XXX 應該換成固定的字串比對
+    return (IV) sv_cmp(a, b);
 }
 static inline IV cmp_any(T(any) a, T(any) b, cmp_t cmp){
     return cmp(a, b);

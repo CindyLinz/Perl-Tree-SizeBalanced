@@ -35,6 +35,10 @@
 #  include "include_tree_with_different_value_type.h"
 #undef KEY
 
+#define KEY str
+#  include "include_tree_with_different_value_type.h"
+#undef KEY
+
 MODULE = Tree::SizeBalanced		PACKAGE = Tree::SizeBalanced::Core		
 
 INCLUDE: const-xs.inc

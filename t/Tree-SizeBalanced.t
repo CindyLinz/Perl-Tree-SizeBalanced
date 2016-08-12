@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 861;
+use Test::More tests => 881;
 BEGIN { use_ok('Tree::SizeBalanced') };
 
 #########################
@@ -155,5 +155,23 @@ BEGIN { use_ok('Tree::SizeBalanced') };
         is($found, 1);
         is($value, 'a'.$_);
     }
+}
+
+{
+    my $tree = Tree::SizeBalanced->new_str_any;
+    for('a'..'g') {
+        $tree->insert($_, 'x'.$_);
+    }
+    for('a'..'g') {
+        my($found, $value) = $tree->find($_);
+        is($found, 1);
+        is($value, 'x'.$_);
+    }
+    is($tree->count_lt('f'), 5);
+    is($tree->count_le('f'), 6);
+    is($tree->count_gt('f'), 1);
+    is($tree->count_ge('f'), 2);
+    is_deeply([$tree->find_lt('a')], [undef]);
+    is_deeply([$tree->find_lt('c')], ['b', 'xb']);
 }
 
