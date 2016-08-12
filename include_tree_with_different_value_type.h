@@ -1,5 +1,3 @@
-#include "tree_key.h"
-
 #define VALUE void
 #  include "tree_key_value.h"
 #  include "xs.h"
