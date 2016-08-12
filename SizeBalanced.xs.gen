@@ -8,425 +8,60 @@
 
 #include "const-c.inc"
 
-#include "tree.h"
+#include "tree_common.h"
 
-#define CALL_CNTR_POLY_KEY1_VOID(FUNC, KEY) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        FUNC ## _iv(cntr, tree_key_iv(SvIV(KEY)));
-    if( cntr->secret == TREE_nv_SECRET )
-        FUNC ## _nv(cntr, tree_key_nv(SvNV(KEY)));
-    if( cntr->secret == TREE_sv_SECRET )
-        FUNC ## _sv(cntr, tree_key_sv(KEY));
-}
-}}}
+#define KV_PASTER(NAME, KEY, VALUE) NAME ## _ ## KEY ## _ ## VALUE
+#define KV_EVALUATOR(NAME, KEY, VALUE) KV_PASTER(NAME, KEY, VALUE)
+#define KV(NAME) KV_EVALUATOR(NAME, KEY, VALUE)
 
-#define CALL_POLY0(RET, FUNC) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        RET = FUNC ## _iv();
-    if( cntr->secret == TREE_nv_SECRET )
-        RET = FUNC ## _nv();
-    if( cntr->secret == TREE_sv_SECRET )
-        RET = FUNC ## _sv();
-}
-}}}
+#define K_PASTER(NAME, KEY) NAME ## _ ## KEY
+#define K_EVALUATOR(NAME, KEY) K_PASTER(NAME, KEY)
+#define K(NAME) K_EVALUATOR(NAME, KEY)
+#define V(NAME) K_EVALUATOR(NAME, VALUE)
 
-#define CALL_CNTR_POLY0_VOID(FUNC) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        FUNC ## _iv(cntr);
-    if( cntr->secret == TREE_nv_SECRET )
-        FUNC ## _nv(cntr);
-    if( cntr->secret == TREE_sv_SECRET )
-        FUNC ## _sv(cntr);
-}
-}}}
+#define I_EVALUATOR(NAME) NAME ## _id
+#define I(NAME) I_EVALUATOR(NAME)
 
-#define CALL_CNTR_POLY0(RET, FUNC) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        RET = FUNC ## _iv(cntr);
-    if( cntr->secret == TREE_nv_SECRET )
-        RET = FUNC ## _nv(cntr);
-    if( cntr->secret == TREE_sv_SECRET )
-        RET = FUNC ## _sv(cntr);
-}
-}}}
+#define T_EVALUATOR(NAME) NAME ## _t
+#define T(NAME) T_EVALUATOR(NAME)
 
-#define CALL_POLY1_VOID(FUNC, ARG) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        FUNC ## _iv(ARG);
-    if( cntr->secret == TREE_nv_SECRET )
-        FUNC ## _nv(ARG);
-    if( cntr->secret == TREE_sv_SECRET )
-        FUNC ## _sv(ARG);
-}
-}}}
+#include "tree_customize.h"
 
-#define CALL_POLY1(RET, FUNC, ARG) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        RET = FUNC ## _iv(ARG);
-    if( cntr->secret == TREE_nv_SECRET )
-        RET = FUNC ## _nv(ARG);
-    if( cntr->secret == TREE_sv_SECRET )
-        RET = FUNC ## _sv(ARG);
-}
-}}}
+#define KEY int
+#  include "include_tree_with_different_value_type.h"
+#undef KEY
 
-#define CALL_CNTR_POLY_KEY1(RET, FUNC, KEY) {{{
-CALL_CNTR_POLY_KEY1_FUNC(RET, FUNC, tree_key, KEY)
-}}}
+#define KEY num
+#  include "include_tree_with_different_value_type.h"
+#undef KEY
 
-#define CALL_CNTR_POLY_KEY1_FUNC(RET, FUNC, FUNC_ON_KEY_TYPE, KEY) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        RET = FUNC ## _iv(cntr, FUNC_ON_KEY_TYPE ## _iv(SvIV(KEY)));
-    if( cntr->secret == TREE_nv_SECRET )
-        RET = FUNC ## _nv(cntr, FUNC_ON_KEY_TYPE ## _nv(SvNV(KEY)));
-    if( cntr->secret == TREE_sv_SECRET )
-        RET = FUNC ## _sv(cntr, FUNC_ON_KEY_TYPE ## _sv(KEY));
-}
-}}}
-
-#define CALL_CNTR_POLY_KEY2(RET, FUNC, ARG, KEY) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        RET = FUNC ## _iv(cntr, ARG, tree_key_iv(SvIV(KEY)));
-    if( cntr->secret == TREE_nv_SECRET )
-        RET = FUNC ## _nv(cntr, ARG, tree_key_nv(SvNV(KEY)));
-    if( cntr->secret == TREE_sv_SECRET )
-        RET = FUNC ## _sv(cntr, ARG, tree_key_sv(KEY));
-}
-}}}
-
-#define CALL_POLY2(RET, FUNC, ARG1, ARG2) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        RET = FUNC ## _iv(ARG1, ARG2);
-    if( cntr->secret == TREE_nv_SECRET )
-        RET = FUNC ## _nv(ARG1, ARG2);
-    if( cntr->secret == TREE_sv_SECRET )
-        RET = FUNC ## _sv(ARG1, ARG2);
-}
-}}}
-
-#define CALL_POLY2_VOID(FUNC, ARG1, ARG2) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        FUNC ## _iv(ARG1, ARG2);
-    if( cntr->secret == TREE_nv_SECRET )
-        FUNC ## _nv(ARG1, ARG2);
-    if( cntr->secret == TREE_sv_SECRET )
-        FUNC ## _sv(ARG1, ARG2);
-}
-}}}
-
-#define CALL_CNTR_POLY2(RET, FUNC, ARG1, ARG2) {{{
-{
-    if( cntr->secret == TREE_iv_SECRET )
-        RET = FUNC ## _iv(cntr, ARG1, ARG2);
-    if( cntr->secret == TREE_nv_SECRET )
-        RET = FUNC ## _nv(cntr, ARG1, ARG2);
-    if( cntr->secret == TREE_sv_SECRET )
-        RET = FUNC ## _sv(cntr, ARG1, ARG2);
-}
-}}}
-
-static inline tree_cntr_t * assure_tree_cntr(SV * obj){
-    if( !obj )
-        croak("assure_tree_cntr: NULL ptr");
-
-    if( !SvROK(obj) )
-        croak("assure_tree_cntr: try to dereference a non-reference");
-
-    SV * ret = SvRV(obj);
-    if( !ret )
-        croak("assure_tree_cntr: deref to NULL");
-
-    if( !SvROK(ret) )
-        croak("assure_tree_cntr: deref to non-reference");
-
-    tree_cntr_t * cntr = (tree_cntr_t*) SvRV(ret);
-    if( !cntr )
-        croak("assure_tree_cntr: NULL cntr");
-
-    if( cntr->secret != TREE_iv_SECRET && cntr->secret != TREE_nv_SECRET && cntr->secret != TREE_sv_SECRET )
-        croak("assure_tree_cntr: unmatched secret");
-
-    return cntr;
-}
-
-MODULE = Tree::SizeBalanced		PACKAGE = Tree::SizeBalanced		
+MODULE = Tree::SizeBalanced		PACKAGE = Tree::SizeBalanced::Core		
 
 INCLUDE: const-xs.inc
 
-void new(SV * class)
-    PPCODE:
-        tree_cntr_t * cntr;
-        Newx(cntr, 1, tree_cntr_t);
-        cntr->secret = TREE_iv_SECRET;
-        CALL_POLY1_VOID(init_tree_cntr, cntr);
+new(SV * class)
+DESTROY(SV * obj)
 
-        SV * ret = newSV(0);
-        SvUPGRADE(ret, SVt_RV);
-        SvROK_on(ret);
-        SvRV(ret) = (SV*) cntr;
+size(SV *obj)
+insert(SV * obj, SV * key, SV * value = &PL_sv_undef)
+delete(SV * obj, SV * key)
 
-        SV * obj = newRV_noinc(ret);
-        STRLEN classname_len;
-        char * classname = SvPVbyte(class, classname_len);
-        HV * stash = gv_stashpvn(classname, classname_len, 0);
-        sv_bless(obj, stash);
-        PUSHs(sv_2mortal(obj));
+find(SV * obj, SV * key)
+find_lt(SV * obj, SV * key)
+find_le(SV * obj, SV * key)
+find_gt(SV * obj, SV * key)
+find_ge(SV * obj, SV * key)
 
-void new_int(SV * class)
-    PPCODE:
-        tree_cntr_t * cntr;
-        Newx(cntr, 1, tree_cntr_t);
-        cntr->secret = TREE_iv_SECRET;
-        CALL_POLY1_VOID(init_tree_cntr, cntr);
+count_lt(SV * obj, SV * key)
+count_le(SV * obj, SV * key)
+count_gt(SV * obj, SV * key)
+count_ge(SV * obj, SV * key)
 
-        SV * ret = newSV(0);
-        SvUPGRADE(ret, SVt_RV);
-        SvROK_on(ret);
-        SvRV(ret) = (SV*) cntr;
+find_min(SV * obj)
+find_max(SV * obj)
 
-        SV * obj = newRV_noinc(ret);
-        STRLEN classname_len;
-        char * classname = SvPVbyte(class, classname_len);
-        HV * stash = gv_stashpvn(classname, classname_len, 0);
-        sv_bless(obj, stash);
-        PUSHs(sv_2mortal(obj));
+skip_l(SV * obj, int offset)
+skip_g(SV * obj, int offset)
 
-void new_num(SV * class)
-    PPCODE:
-        tree_cntr_t * cntr;
-        Newx(cntr, 1, tree_cntr_t);
-        cntr->secret = TREE_nv_SECRET;
-        CALL_POLY1_VOID(init_tree_cntr, cntr);
-
-        SV * ret = newSV(0);
-        SvUPGRADE(ret, SVt_RV);
-        SvROK_on(ret);
-        SvRV(ret) = (SV*) cntr;
-
-        SV * obj = newRV_noinc(ret);
-        STRLEN classname_len;
-        char * classname = SvPVbyte(class, classname_len);
-        HV * stash = gv_stashpvn(classname, classname_len, 0);
-        sv_bless(obj, stash);
-        PUSHs(sv_2mortal(obj));
-
-void new_str(SV * class)
-    PPCODE:
-        tree_cntr_t * cntr;
-        Newx(cntr, 1, tree_cntr_t);
-        cntr->secret = TREE_sv_SECRET;
-        CALL_POLY1_VOID(init_tree_cntr, cntr);
-
-        SV * ret = newSV(0);
-        SvUPGRADE(ret, SVt_RV);
-        SvROK_on(ret);
-        SvRV(ret) = (SV*) cntr;
-
-        SV * obj = newRV_noinc(ret);
-        STRLEN classname_len;
-        char * classname = SvPVbyte(class, classname_len);
-        HV * stash = gv_stashpvn(classname, classname_len, 0);
-        sv_bless(obj, stash);
-        PUSHs(sv_2mortal(obj));
-
-void DESTROY(SV * obj)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        empty_tree_cntr(cntr);
-        Safefree(cntr);
-        SvRV(SvRV(obj)) = NULL;
-
-void size(SV *obj)
-    PPCODE:
-        dXSTARG;
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        PUSHu((UV) tree_size(cntr));
-
-void insert(SV * obj, SV * key)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        CALL_CNTR_POLY_KEY1_VOID(tree_insert, key);
-
-void delete(SV * obj, SV * key)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        bool ret;
-        CALL_CNTR_POLY_KEY1(ret, tree_delete, key);
-        if( ret )
-            PUSHs(&PL_sv_yes);
-        else
-            PUSHs(&PL_sv_no);
-
-void find(SV * obj, SV * key)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        bool ret;
-        CALL_CNTR_POLY_KEY1(ret, tree_find, key);
-        if( ret )
-            PUSHs(&PL_sv_yes);
-        else
-            PUSHs(&PL_sv_no);
-
-void find_lt(SV * obj, SV * key)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        tree_key_t found, not_found;
-        CALL_POLY0(not_found, max_key)
-        CALL_CNTR_POLY_KEY2(found, tree_find_lt, not_found, key);
-
-        bool ret;
-        CALL_POLY2(ret, ident, found, not_found)
-        if( ret )
-            PUSHs(&PL_sv_undef);
-        else
-            CALL_POLY2(SP, ret_key, SP, found);
-
-void find_le(SV * obj, SV * key)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        tree_key_t found, not_found;
-        CALL_POLY0(not_found, max_key);
-        CALL_CNTR_POLY_KEY2(found, tree_find_le, not_found, key);
-
-        bool ret;
-        CALL_POLY2(ret, ident, found, not_found);
-        if( ret )
-            PUSHs(&PL_sv_undef);
-        else
-            CALL_POLY2(SP, ret_key, SP, found);
-
-void find_gt(SV * obj, SV * key)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        tree_key_t found, not_found;
-        CALL_POLY0(not_found, min_key);
-        CALL_CNTR_POLY_KEY2(found, tree_find_gt, not_found, key);
-
-        bool ret;
-        CALL_POLY2(ret, ident, found, not_found);
-        if( ret )
-            PUSHs(&PL_sv_undef);
-        else
-            CALL_POLY2(SP, ret_key, SP, found);
-
-void find_ge(SV * obj, SV * key)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        tree_key_t found, not_found;
-        CALL_POLY0(not_found, min_key);
-        CALL_CNTR_POLY_KEY2(found, tree_find_ge, not_found, key);
-
-        bool ret;
-        CALL_POLY2(ret, ident, found, not_found);
-        if( ret )
-            PUSHs(&PL_sv_undef);
-        else
-            CALL_POLY2(SP, ret_key, SP, found);
-
-void count_lt(SV * obj, SV * key)
-    PPCODE:
-        dXSTARG;
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        int ret;
-        CALL_CNTR_POLY_KEY1(ret, tree_count_lt, key);
-        PUSHu((UV) ret);
-
-void count_le(SV * obj, SV * key)
-    PPCODE:
-        dXSTARG;
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        int ret;
-        CALL_CNTR_POLY_KEY1(ret, tree_count_le, key);
-        PUSHu((UV) ret);
-
-void count_gt(SV * obj, SV * key)
-    PPCODE:
-        dXSTARG;
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        int ret;
-        CALL_CNTR_POLY_KEY1(ret, tree_count_gt, key);
-        PUSHu((UV) ret);
-
-void count_ge(SV * obj, SV * key)
-    PPCODE:
-        dXSTARG;
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        int ret;
-        CALL_CNTR_POLY_KEY1(ret, tree_count_ge, key);
-        PUSHu((UV) ret);
-
-void find_min(SV * obj)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        if( tree_size(cntr) == 0 )
-            PUSHs(&PL_sv_undef);
-        else{
-            tree_key_t found = tree_find_min(cntr);
-            CALL_POLY2(SP, ret_key, SP, found);
-        }
-
-void find_max(SV * obj)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        if( tree_size(cntr) == 0 )
-            PUSHs(&PL_sv_undef);
-        else{
-            tree_key_t found = tree_find_max(cntr);
-            CALL_POLY2(SP, ret_key, SP, found);
-        }
-
-void skip_l(SV * obj, int offset)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        if( offset < 0 || offset >= tree_size(cntr) )
-            PUSHs(&PL_sv_undef);
-        else{
-            tree_key_t found = tree_skip_l(cntr, offset);
-            CALL_POLY2(SP, ret_key, SP, found);
-        }
-
-void skip_g(SV * obj, int offset)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        if( offset < 0 || offset >= tree_size(cntr) )
-            PUSHs(&PL_sv_undef);
-        else{
-            tree_key_t found = tree_skip_g(cntr, offset);
-            CALL_POLY2(SP, ret_key, SP, found);
-        }
-
-void dump(SV *obj)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-        CALL_CNTR_POLY0_VOID(tree_dump);
-
-void check(SV * obj)
-    PPCODE:
-        tree_cntr_t * cntr = assure_tree_cntr(obj);
-
-        EXTEND(SP, 3);
-
-        bool ret;
-        CALL_CNTR_POLY0(ret, tree_check_order);
-        if( ret )
-            PUSHs(&PL_sv_yes);
-        else
-            PUSHs(&PL_sv_no);
-        if( tree_check_size(cntr) )
-            PUSHs(&PL_sv_yes);
-        else
-            PUSHs(&PL_sv_no);
-        if( tree_check_balance(cntr) )
-            PUSHs(&PL_sv_yes);
-        else
-            PUSHs(&PL_sv_no);
+dump(SV *obj)
+check(SV * obj)

@@ -1,5 +1,67 @@
 use 5.022001;
 use ExtUtils::MakeMaker;
+
+my @key = qw(int num);
+my @value = qw(void int num);
+my @method;
+{
+    my $f;
+    open $f, 'SizeBalanced.xs.gen';
+    local $/;
+    my $xs = <$f>;
+    close $f;
+
+    my($static_code, $member_proto) = $xs =~ /(.*\nINCLUDE:.*?\n)(.*)/s;
+
+    @method = $member_proto =~ /(\w+) *\(.*\)/g;
+
+    open $f, '>SizeBalanced.xs';
+    print $f $static_code;
+    for my $key (@key) {
+        for my $value (@value) {
+            my $member_proto = $member_proto;
+            $member_proto =~ s((\w+) *\((.*)\)){
+                my($method, $proto) = ($1, $2);
+                my $args = $proto;
+                $args =~ s/(^|,)[^,]*?(\w+)\s*(?:|=[^,]*)(?=$|,)/$1$2/g;
+
+                <<".";
+void
+$method\_$key\_$value($proto)
+    PPCODE:
+        SP = $method\_$key\_$value(aTHX_ SP, $args);
+.
+            }ge;
+            print $f $member_proto;
+        }
+    }
+    close $f;
+}
+
+mkdir 'lib/Tree/SizeBalanced';
+for my $key (@key) {
+    for my $value (@value) {
+        my $f;
+        open $f, ">lib/Tree/SizeBalanced/$key\_$value.pm";
+
+        print $f <<".";
+package Tree::SizeBalanced::$key\_$value;
+
+use strict;
+use warnings;
+
+use Tree::SizeBalanced;
+
+.
+        for my $method (@method) {
+            print $f "*$method = \\&Tree::SizeBalanced::Core::$method\_$key\_$value;\n";
+        }
+        print $f "\n1;\n";
+
+        close $f;
+    }
+}
+
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
@@ -41,45 +103,3 @@ else {
   }
 }
 
-for my $gen_filename ( <*.gen> ) {
-    my($filename) = $gen_filename =~ /^(.*)\.gen$/;
-
-    my($inf, $outf);
-
-    open $inf, $gen_filename;
-    my $source = do{
-        local $/;
-        <$inf>;
-    };
-    close $inf;
-
-    my @macro;
-    $source =~ s(#\s*define\s+(\w+)\s*\(([^()]*)\)\s*\{{3}(.*?)\}{3}){
-        my($name, $args, $body) = ($1, $2, $3);
-        my @arg = $args =~ /(\w+)/g;
-        push @macro, [$name, \@arg, $body];
-        ''
-    }ges;
-
-    for my $macro (@macro) {
-        my($name, $args, $code) = @$macro;
-        $source =~ s(([ \t]*)$name\s*\(([^()]*)\)){
-            my $indent = $1;
-            my $arg_values = $2;
-            my @arg_value = split /,/, $arg_values;
-
-            my $code = $code;
-            for my $i (0..$#{$args}) {
-                my $arg_label = $args->[$i];
-                my $arg_value = $arg_value[$i];
-                $code =~ s/(\s*##\s*|\b)$arg_label(\s*##\s*|\b)/$arg_value/g;
-            }
-            $code =~ s/^/$indent/gm;
-            $code . $indent;
-        }ges;
-    }
-
-    open $outf, ">$filename";
-    print $outf $source;
-    close $outf;
-}
