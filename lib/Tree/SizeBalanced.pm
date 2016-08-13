@@ -20,9 +20,10 @@ our @ISA = qw(Exporter);
 
 our $VERSION = '0.01';
 
-for my $key (qw(int num str)) {
+for my $key (qw(int num str any)) {
     for my $value (qw(void int num any)) {
         require "Tree/SizeBalanced/$key\_$value.pm";
+
         no strict 'refs';
         my $new_func = \&{"Tree::SizeBalanced::$key\_$value\::new"};
         my $class = "Tree::SizeBalanced::$key\_$value";
@@ -32,7 +33,13 @@ for my $key (qw(int num str)) {
         };
     }
 }
-*new = \&new_int_void;
+sub new {
+    if( ref($_[0]) eq 'SUB' ) {
+        goto \&new_any_void;
+    } else {
+        goto \&new_int_void;
+    }
+}
 
 require XSLoader;
 XSLoader::load('Tree::SizeBalanced', $VERSION);

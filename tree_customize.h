@@ -120,17 +120,36 @@ static inline SV** mret_any(SV ** SP, T(any) key){
     return SP;
 }
 
-static inline IV cmp_int(T(int) a, T(int) b, cmp_t cmp){
+static inline IV cmp_int(T(int) a, T(int) b, SV* cmp){
     return a - b;
 }
-static inline NV cmp_num(T(num) a, T(num) b, cmp_t cmp){
+static inline NV cmp_num(T(num) a, T(num) b, SV* cmp){
     return a - b;
 }
-static inline IV cmp_str(T(str) a, T(str) b, cmp_t cmp){
+static inline IV cmp_str(T(str) a, T(str) b, SV* cmp){
     return (IV) sv_cmp(a, b);
 }
-static inline IV cmp_any(T(any) a, T(any) b, cmp_t cmp){
-    return cmp(a, b);
+static inline IV cmp_any(T(any) a, T(any) b, SV* cmp){
+    SV * a_SV = GvSV(a_GV);
+    SV * b_SV = GvSV(b_GV);
+    SvSetSV(a_SV, a);
+    SvSetSV(b_SV, b);
+
+    dSP;
+
+    PUSHMARK(SP);
+    I32 ret_count = call_sv(cmp, G_SCALAR | G_NOARGS);
+
+    SPAGAIN;
+
+    IV res = 0;
+    if( ret_count==1 )
+        res = POPi;
+
+    PUTBACK;
+
+    //return cmp(a, b);
+    return res;
 }
 
 #endif

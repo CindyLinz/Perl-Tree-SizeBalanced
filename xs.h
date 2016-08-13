@@ -1,10 +1,10 @@
 // vim: filetype=xs
 
-SV ** KV(new)(pTHX_ SV ** SP, SV * class){
+SV ** KV(new)(pTHX_ SV ** SP, SV * class, SV * cmp){
     KV(tree_cntr_t) * cntr;
     Newx(cntr, 1, KV(tree_cntr_t));
     cntr->secret = KV(secret);
-    KV(init_tree_cntr)(cntr);
+    KV(init_tree_cntr)(cntr, cmp);
 
     SV * ret = newSV(0);
     SvUPGRADE(ret, SVt_RV);
@@ -37,21 +37,37 @@ SV ** KV(size)(pTHX_ SV** SP, SV *obj){
 
 SV ** KV(insert)(pTHX_ SV** SP, SV * obj, SV * key, SV * value){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
+
+    save_scalar(a_GV);
+    save_scalar(b_GV);
+
     KV(tree_insert)(cntr, K(copy_sv)(key), V(copy_sv)(value));
     return SP;
 }
 
 SV ** KV(delete)(pTHX_ SV** SP, SV * obj, SV * key){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
+
+    save_scalar(a_GV);
+    save_scalar(b_GV);
+    SvREFCNT_inc_simple_void_NN(key);
+
     if( KV(tree_delete)(cntr, K(from_sv)(key)) )
         PUSHs(&PL_sv_yes);
     else
         PUSHs(&PL_sv_no);
+
+    SvREFCNT_dec_NN(key);
     return SP;
 }
 
 SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
+
+    save_scalar(a_GV);
+    save_scalar(b_GV);
+    SvREFCNT_inc_simple_void_NN(key);
+
     T(VALUE) value_result;
     if( KV(tree_find)(cntr, K(from_sv)(key), &value_result) ){
         PUSHs(&PL_sv_yes);
@@ -61,6 +77,8 @@ SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
     }
     else
         PUSHs(&PL_sv_no);
+
+    SvREFCNT_dec_NN(key);
     return SP;
 }
 
@@ -176,6 +194,9 @@ SV ** KV(dump)(pTHX_ SV** SP, SV *obj){
 
 SV ** KV(check)(pTHX_ SV** SP, SV * obj){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
+
+    save_scalar(a_GV);
+    save_scalar(b_GV);
 
     EXTEND(SP, 3);
 

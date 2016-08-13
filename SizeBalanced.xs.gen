@@ -8,6 +8,8 @@
 
 #include "const-c.inc"
 
+GV * a_GV, * b_GV;
+
 #include "tree_common.h"
 
 #define KV_PASTER(NAME, KEY, VALUE) NAME ## _ ## KEY ## _ ## VALUE
@@ -39,11 +41,19 @@
 #  include "include_tree_with_different_value_type.h"
 #undef KEY
 
+#define KEY any
+#  include "include_tree_with_different_value_type.h"
+#undef KEY
+
 MODULE = Tree::SizeBalanced		PACKAGE = Tree::SizeBalanced::Core		
+
+BOOT:
+    a_GV = gv_fetchpvn("::a", 3, 1, SVt_PV);
+    b_GV = gv_fetchpvn("::b", 3, 1, SVt_PV);
 
 INCLUDE: const-xs.inc
 
-new(SV * class)
+new(SV * class, SV * cmp = &PL_sv_undef)
 DESTROY(SV * obj)
 
 size(SV *obj)

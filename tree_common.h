@@ -8,6 +8,4 @@
 
 #define SEG_SIZE (64)
 
-typedef IV (*cmp_t)(SV * a, SV * b);
-
 #endif

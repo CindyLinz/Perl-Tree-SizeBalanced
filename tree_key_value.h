@@ -23,7 +23,7 @@ typedef struct KV(tree_seg_t) {
 
 typedef struct KV(tree_cntr_t) {
     long long secret;
-    cmp_t cmp;
+    SV* cmp;
     KV(tree_t) * root; // (init 後, empty 前) 永不為空, 一開始指向 nil
     KV(tree_t) * free_slot;
     KV(tree_seg_t) * newest_seg;
@@ -354,11 +354,14 @@ static inline T(KEY) KV(tree_skip_g)(KV(tree_cntr_t) * cntr, int offset, T(VALUE
     }
 }
 
-static inline void KV(init_tree_cntr)(KV(tree_cntr_t) * cntr){
+static inline void KV(init_tree_cntr)(KV(tree_cntr_t) * cntr, SV * cmp){
     cntr->secret = KV(secret);
     cntr->root = (KV(tree_t)*) &nil;
     cntr->newest_seg = NULL;
     cntr->free_slot = NULL;
+#if I(KEY) == I(any)
+    cntr->cmp = SvREFCNT_inc_simple_NN(cmp);
+#endif
 }
 
 KV(tree_t) * KV(tree_insert_subtree)(KV(tree_cntr_t) * cntr, KV(tree_t) * p, T(KEY) key, KV(tree_t) * new_tree, T(VALUE) value){
