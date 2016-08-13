@@ -5,7 +5,9 @@ SV ** KV(XS_FUZZY_FIND_FUNC)(pTHX_ SV** SP, SV * obj, SV * key){
 
     save_scalar(a_GV);
     save_scalar(b_GV);
+#if I(KEY) == I(any)
     SvREFCNT_inc_simple_void_NN(key);
+#endif
 
     T(VALUE) value_result;
     T(KEY) found = KV(FUZZY_FIND_FUNC)(cntr, K(from_sv)(key), &value_result);
@@ -18,6 +20,8 @@ SV ** KV(XS_FUZZY_FIND_FUNC)(pTHX_ SV** SP, SV * obj, SV * key){
 #endif
     }
 
+#if I(KEY) == I(any)
     SvREFCNT_dec_NN(key);
+#endif
     return SP;
 }

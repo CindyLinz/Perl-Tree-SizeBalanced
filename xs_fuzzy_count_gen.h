@@ -6,11 +6,15 @@ SV ** KV(XS_FUZZY_COUNT_FUNC)(pTHX_ SV** SP, SV * obj, SV * key){
 
     save_scalar(a_GV);
     save_scalar(b_GV);
+#if I(KEY) == I(any)
     SvREFCNT_inc_simple_void_NN(key);
+#endif
 
     PUSHu(KV(FUZZY_COUNT_FUNC)(cntr, K(from_sv)(key)));
 
+#if I(KEY) == I(any)
     SvREFCNT_dec_NN(key);
+#endif
     return SP;
 }
 

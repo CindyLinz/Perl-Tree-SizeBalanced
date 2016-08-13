@@ -50,14 +50,18 @@ SV ** KV(delete)(pTHX_ SV** SP, SV * obj, SV * key){
 
     save_scalar(a_GV);
     save_scalar(b_GV);
+#if I(KEY) == I(any)
     SvREFCNT_inc_simple_void_NN(key);
+#endif
 
     if( KV(tree_delete)(cntr, K(from_sv)(key)) )
         PUSHs(&PL_sv_yes);
     else
         PUSHs(&PL_sv_no);
 
+#if I(KEY) == I(any)
     SvREFCNT_dec_NN(key);
+#endif
     return SP;
 }
 
@@ -66,7 +70,9 @@ SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
 
     save_scalar(a_GV);
     save_scalar(b_GV);
+#if I(KEY) == I(any)
     SvREFCNT_inc_simple_void_NN(key);
+#endif
 
     T(VALUE) value_result;
     if( KV(tree_find)(cntr, K(from_sv)(key), &value_result) ){
@@ -78,7 +84,9 @@ SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
     else
         PUSHs(&PL_sv_no);
 
+#if I(KEY) == I(any)
     SvREFCNT_dec_NN(key);
+#endif
     return SP;
 }
 
