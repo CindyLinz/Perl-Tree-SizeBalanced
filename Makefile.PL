@@ -1,4 +1,4 @@
-use 5.022001;
+use 5.008009;
 use ExtUtils::MakeMaker;
 
 my @key = qw(int num str any);
@@ -36,17 +36,15 @@ my @method;
     for my $key (@key) {
         for my $value (@value) {
             my $member_proto = $member_proto;
-            $member_proto =~ s((\w+) *\((.*)\)){
+            $member_proto =~ s[(\w+) *\((.*)\)]{
                 my($method, $proto) = ($1, $2);
                 my $args = $proto;
                 $args =~ s/(^|,)[^,]*?(\w+)\s*(?:|=[^,]*)(?=$|,)/$1$2/g;
 
-                <<".";
-void
-$method\_$key\_$value($proto)
-    PPCODE:
-        SP = $method\_$key\_$value(aTHX_ SP, $args);
-.
+                "void\n".
+                "$method\_$key\_$value($proto)\n".
+                "    PPCODE:\n".
+                "        SP = $method\_$key\_$value(aTHX_ SP, $args);\n"
             }ge;
             print $f $member_proto;
         }
@@ -269,7 +267,7 @@ WriteMakefile(
     #Value must be from legacy list of licenses here
     #http://search.cpan.org/perldoc?Module%3A%3ABuild%3A%3AAPI
     LIBS              => [''], # e.g., '-lm'
-    DEFINE            => '-g -O0', # e.g., '-DHAVE_SOMETHING'
+    DEFINE            => '', #'-g -O0', # e.g., '-DHAVE_SOMETHING'
     INC               => '-I.', # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:
     OBJECT            => '$(O_FILES)', # link all the C files too

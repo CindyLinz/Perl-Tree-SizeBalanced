@@ -13,7 +13,11 @@ SV ** KV(XS_FUZZY_COUNT_FUNC)(pTHX_ SV** SP, SV * obj, SV * key){
     PUSHu(KV(FUZZY_COUNT_FUNC)(cntr, K(from_sv)(key)));
 
 #if I(KEY) == I(any)
+#   ifdef SvREFCNT_dec_NN
     SvREFCNT_dec_NN(key);
+#   else
+    SvREFCNT_dec(key);
+#   endif
 #endif
     return SP;
 }

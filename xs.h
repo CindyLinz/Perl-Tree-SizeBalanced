@@ -60,7 +60,11 @@ SV ** KV(delete)(pTHX_ SV** SP, SV * obj, SV * key){
         PUSHs(&PL_sv_no);
 
 #if I(KEY) == I(any)
+#   ifdef SvREFCNT_dec_NN
     SvREFCNT_dec_NN(key);
+#   else
+    SvREFCNT_dec(key);
+#   endif
 #endif
     return SP;
 }
@@ -85,7 +89,11 @@ SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
         PUSHs(&PL_sv_no);
 
 #if I(KEY) == I(any)
+#   ifdef SvREFCNT_dec_NN
     SvREFCNT_dec_NN(key);
+#   else
+    SvREFCNT_dec(key);
+#   endif
 #endif
     return SP;
 }

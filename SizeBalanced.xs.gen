@@ -48,8 +48,8 @@ GV * a_GV, * b_GV;
 MODULE = Tree::SizeBalanced		PACKAGE = Tree::SizeBalanced::Core		
 
 BOOT:
-    a_GV = gv_fetchpvn("::a", 3, 1, SVt_PV);
-    b_GV = gv_fetchpvn("::b", 3, 1, SVt_PV);
+    a_GV = gv_fetchpvn_flags("::a", 3, 1, SVt_PV);
+    b_GV = gv_fetchpvn_flags("::b", 3, 1, SVt_PV);
 
 INCLUDE: const-xs.inc
 
