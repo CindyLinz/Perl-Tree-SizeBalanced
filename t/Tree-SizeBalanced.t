@@ -8,8 +8,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 890;
-BEGIN { use_ok('Tree::SizeBalanced') };
+use Test::More tests => 940;
+BEGIN { use_ok('Tree::SizeBalanced', ':all') };
 
 #########################
 
@@ -17,7 +17,7 @@ BEGIN { use_ok('Tree::SizeBalanced') };
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 {
-    my $tree = Tree::SizeBalanced->new_int_void;
+    my $tree = sbtreei;
 
     for(1..20) {
         $tree->insert($_);
@@ -73,7 +73,7 @@ BEGIN { use_ok('Tree::SizeBalanced') };
 }
 
 {
-    my $tree = Tree::SizeBalanced->new_num_void;
+    my $tree = sbtreen;
 
     for(1..20) {
         $tree->insert($_ / 2);
@@ -129,7 +129,28 @@ BEGIN { use_ok('Tree::SizeBalanced') };
 }
 
 {
-    my $tree = Tree::SizeBalanced->new_int_int;
+    my $tree = Tree::SizeBalanced::int_int->new;
+    for(1..10) {
+        $tree->insert($_*2, 10-$_);
+    }
+    for(1..10) {
+        my($found, $value) = $tree->find($_*2);
+        is($found, 1);
+        is($value, 10-$_);
+    }
+    for(1..10) {
+        my($found, $value) = $tree->find_lt($_*2+1);
+        is($found, $_*2);
+        is($value, 10-$_);
+    }
+    for(1..10) {
+        my $found = $tree->find_lt($_*2+1);
+        is($found, $_*2);
+    }
+}
+
+{
+    my $tree = Tree::SizeBalanced->new;
     for(1..10) {
         $tree->insert($_*2, 10-$_);
     }
@@ -146,7 +167,7 @@ BEGIN { use_ok('Tree::SizeBalanced') };
 }
 
 {
-    my $tree = Tree::SizeBalanced->new_int_any;
+    my $tree = sbtreeia;
     for(1..10) {
         $tree->insert($_, 'a'.$_);
     }
@@ -158,7 +179,7 @@ BEGIN { use_ok('Tree::SizeBalanced') };
 }
 
 {
-    my $tree = Tree::SizeBalanced->new_str_any;
+    my $tree = sbtreesa;
     for('a'..'g') {
         $tree->insert($_, 'x'.$_);
     }
@@ -176,10 +197,10 @@ BEGIN { use_ok('Tree::SizeBalanced') };
 }
 
 {
-    my $tree = Tree::SizeBalanced->new_any_void(sub {
+    my $tree = sbtreea {
         #diag("a=$a, b=$b");
         length($b) <=> length($a)
-    });
+    };
     for(1..9) {
         $tree->insert('x' x $_);
     }

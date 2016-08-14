@@ -146,7 +146,8 @@ SV ** KV(find_min)(pTHX_ SV** SP, SV * obj){
         T(VALUE) value_result;
         SP = K(ret)(SP, KV(tree_find_min)(cntr, &value_result));
 #if I(VALUE) != I(void)
-        SP = V(mret)(SP, value_result);
+        if( GIMME_V == G_ARRAY )
+            SP = V(mret)(SP, value_result);
 #endif
     }
     return SP;
@@ -160,7 +161,8 @@ SV ** KV(find_max)(pTHX_ SV** SP, SV * obj){
         T(VALUE) value_result;
         SP = K(ret)(SP, KV(tree_find_max)(cntr, &value_result));
 #if I(VALUE) != I(void)
-        SP = V(mret)(SP, value_result);
+        if( GIMME_V == G_ARRAY )
+            SP = V(mret)(SP, value_result);
 #endif
     }
     return SP;
@@ -174,7 +176,8 @@ SV ** KV(skip_l)(pTHX_ SV** SP, SV * obj, int offset){
         T(VALUE) value_result;
         SP = K(ret)(SP, KV(tree_skip_l)(cntr, offset, &value_result));
 #if I(VALUE) != I(void)
-        SP = V(mret)(SP, value_result);
+        if( GIMME_V == G_ARRAY )
+            SP = V(mret)(SP, value_result);
 #endif
     }
     return SP;
@@ -188,7 +191,8 @@ SV ** KV(skip_g)(pTHX_ SV** SP, SV * obj, int offset){
         T(VALUE) value_result;
         SP = K(ret)(SP, KV(tree_skip_g)(cntr, offset, &value_result));
 #if I(VALUE) != I(void)
-        SP = V(mret)(SP, value_result);
+        if( GIMME_V == G_ARRAY )
+            SP = V(mret)(SP, value_result);
 #endif
     }
     return SP;

@@ -16,7 +16,8 @@ SV ** KV(XS_FUZZY_FIND_FUNC)(pTHX_ SV** SP, SV * obj, SV * key){
     else{
         SP = K(ret)(SP, found);
 #if I(VALUE) != I(void)
-        SP = V(mret)(SP, value_result);
+        if( GIMME_V == G_ARRAY )
+            SP = V(mret)(SP, value_result);
 #endif
     }
 
