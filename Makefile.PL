@@ -17,6 +17,8 @@ my %type_name = (
     'any' => 'any scalars',
 );
 
+my @generated_file;
+
 my @method;
 {
     my $f;
@@ -50,6 +52,8 @@ $method\_$key\_$value($proto)
         }
     }
     close $f;
+
+    push @generated_file, 'SizeBalanced.xs';
 }
 
 mkdir 'lib/Tree/SizeBalanced';
@@ -73,6 +77,8 @@ use Tree::SizeBalanced;
         print $f "\n1;\n";
 
         close $f;
+
+        push @generated_file, "lib/Tree/SizeBalanced/$key\_$value.pm";
     }
 }
 
@@ -247,6 +253,8 @@ sub new {
     open $f, '>lib/Tree/SizeBalanced.pm';
     print $f $src;
     close $f;
+
+    push @generated_file, 'lib/Tree/SizeBalanced.pm';
 }
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
@@ -265,6 +273,7 @@ WriteMakefile(
     INC               => '-I.', # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:
     OBJECT            => '$(O_FILES)', # link all the C files too
+    clean             => {FILES => \@generated_file},
 );
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,
