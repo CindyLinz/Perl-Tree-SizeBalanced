@@ -89,12 +89,6 @@ our %EXPORT_TAGS = (
     'long' => [],
 );
 
-=head2 Different trees with different types
-
-For performance consideration, this module provides trees with many stricter types
-
-=cut
-
 .
     for my $key (@key) {
         for my $value (@value) {

@@ -20,7 +20,7 @@ our @ISA = qw(Exporter);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 
-our $VERSION = '0.01';
+our $VERSION = '1.000000';
 
 =head1 NAME
 
@@ -88,6 +88,22 @@ Quoted from L<http://wcipeg.com/wiki/Size_Balanced_Tree>:
 
 > A size balanced tree (SBT) is a self-balancing binary search tree (BBST) first published by Chinese student Qifeng Chen in 2007. The tree is rebalanced by examining the sizes of each node's subtrees. Its abbreviation resulted in many nicknames given by Chinese informatics competitors, including "sha bi" tree (Chinese: 傻屄树; pinyin: shǎ bī shù; literally meaning "dumb cunt tree") and "super BT", which is a homophone to the Chinese term for snot (Chinese: 鼻涕; pinyin: bítì) suggesting that it is messy to implement. Contrary to what its nicknames suggest, this data structure can be very useful, and is also known to be easy to implement. Since the only extra piece of information that needs to be stored is sizes of the nodes (instead of other "useless" fields such as randomized weights in treaps or colours in red–black tress), this makes it very convenient to implement the select-by-rank and get-rank operations (easily transforming it into an order statistic tree). It supports standard binary search tree operations such as insertion, deletion, and searching in O(log n) time. According to Chen's paper, "it works much faster than many other famous BSTs due to the tendency of a perfect BST in practice."
 
+For performance consideration, this module provides trees with many stricter types.
+
+If you choose integers as the key type, don't use the least number (-2147483647 or -9223372036854775808 according to your perl version) as a key. The tree uses it to indicate `not found' internally for performance reason.
+
+If you choose integers as the key type, don't use "-nan" as a key. The tree uses it to indicate `not found' internally for performance reason.
+
+If you choose any scalar as the key type, you must provide a comparing sub.
+The comparing sub should exammed localized C<$a> and C<$b> (or C<$::a> and C<$::b> if there are introduced lexical <$a> and <$b> right outside the sub).
+And if your comparing sub using an indirect way to judge the size of the keys,
+don't do anything that will change the judge result. Or, the tree will be confused and give you incorrect results.
+
+If you put more than one entries with equal-sized keys, the order between them is not garenteed.
+
+The C<find> and C<delete> methods will try to pick any entries with the same key size as the provided one,
+they won't try to find the identical one.
+
 PS. Qifeng Chen is 陈启峰 in simplified Chinese.
 
 This module has been tested on perl version 5.8.9, 5.10.1, 5.12.5, 5.14.4, 5.16.3, 5.18.4, 5.20.3, 5.22.1, 5.22.2
@@ -119,6 +135,8 @@ With the short form:
 =item :all = :short + :long
 
 =back
+
+=head2 Different trees with different types
 
 =cut
 
