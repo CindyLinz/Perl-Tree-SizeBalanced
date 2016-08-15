@@ -82,10 +82,10 @@ use Tree::SizeBalanced;
 
 {
     my $insert_code = <<'.';
-our @EXPORT_OK;
+our @EXPORT_OK = qw(sbtree);
 our %EXPORT_TAGS = (
-    'all' => [],
-    'short' => [],
+    'all' => ['sbtree'],
+    'short' => ['sbtree'],
     'long' => [],
 );
 
@@ -226,6 +226,7 @@ sub sbtree(;&) {
 }
 
 sub new {
+    shift;
     if( ref($_[0]) eq 'CODE' ) {
         goto \\&sbtreeaa;
     } else {

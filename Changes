@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+1.003000    2016.8.15
+            add default type constructor, MANIFEST generated SizeBalanced.pm file for cpan document
+
 1.002000    2016.8.15
             add missing pTHX / aTHX
 

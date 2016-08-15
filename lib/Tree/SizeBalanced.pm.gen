@@ -20,7 +20,7 @@ our @ISA = qw(Exporter);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 
-our $VERSION = '1.002000';
+our $VERSION = '1.003000';
 
 =head1 NAME
 
@@ -142,6 +142,28 @@ With the short form:
 
 "INSERT POINT";
 
+=head3 Default type constructors
+
+=over 4
+
+=item $tree = Tree::SizeBalanced->new;
+
+equivalent to C<<$tree = Tree::SizeBalanced::int_any->new;>>
+
+=item $tree = Tree::SizeBalanced->new sub { $a cmp $b };
+
+equivalent to C<<$tree = Tree::SizeBalanced::any_any->new;>>
+
+=item $tree = sbtree;
+
+equivalent to C<$tree = sbtreeia>
+
+=item $tree = sbtree { $a cmp $b };
+
+equivalent to C<$tree = sbtreeaa>
+
+=back
+
 =head1 SEE ALSO
 
 This mod's github L<https://github.com/CindyLinz/Perl-Tree-SizeBalanced>.
@@ -164,6 +186,10 @@ Copyright (C) 2016 by CindyLinz
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.22.1 or,
 at your option, any later version of Perl 5 you may have available.
+
+=head1 ACKNOWLEDGEMENT
+
+Thank TDYa127 L<https://github.com/a127a127/> who tell me size balanced tree.
 
 =cut
 

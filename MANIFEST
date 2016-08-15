@@ -7,6 +7,7 @@ SizeBalanced.xs.gen
 t/Tree-SizeBalanced.t
 fallback/const-c.inc
 fallback/const-xs.inc
+lib/Tree/SizeBalanced.pm
 lib/Tree/SizeBalanced.pm.gen
 fuzzy_find_gen.h
 tree_customize.h
