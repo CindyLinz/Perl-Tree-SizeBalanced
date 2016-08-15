@@ -193,7 +193,7 @@ static inline void KV(free_cell)(KV(tree_cntr_t) * cntr, KV(tree_t) * cell){
     cntr->free_slot = cell;
 }
 
-static inline void KV(empty_tree_cntr)(KV(tree_cntr_t) * cntr){
+static inline void KV(empty_tree_cntr)(pTHX_ KV(tree_cntr_t) * cntr){
 #if I(KEY) == I(str) || I(KEY) == I(any) || I(VALUE) == I(str) || I(VALUE) == I(any)
     KV(tree_t) * free_slot = cntr->free_slot;
     while( free_slot ){
@@ -364,13 +364,13 @@ static inline void KV(init_tree_cntr)(KV(tree_cntr_t) * cntr, SV * cmp){
 #endif
 }
 
-KV(tree_t) * KV(tree_insert_subtree)(KV(tree_cntr_t) * cntr, KV(tree_t) * p, T(KEY) key, KV(tree_t) * new_tree, T(VALUE) value){
+KV(tree_t) * KV(tree_insert_subtree)(pTHX_ KV(tree_cntr_t) * cntr, KV(tree_t) * p, T(KEY) key, KV(tree_t) * new_tree, T(VALUE) value){
     ++p->size;
-    if( K(cmp)(p->key, key, cntr->cmp) <= 0 ){
+    if( K(cmp)(aTHX_ p->key, key, cntr->cmp) <= 0 ){
         if( p->right == (KV(tree_t)*) &nil )
             p->right = new_tree;
         else{
-            p->right = KV(tree_insert_subtree)(cntr, p->right, key, new_tree, value);
+            p->right = KV(tree_insert_subtree)(aTHX_ cntr, p->right, key, new_tree, value);
             p = (KV(tree_t)*) maintain_larger_right(p);
         }
     }
@@ -378,13 +378,13 @@ KV(tree_t) * KV(tree_insert_subtree)(KV(tree_cntr_t) * cntr, KV(tree_t) * p, T(K
         if( p->left == (KV(tree_t)*) &nil )
             p->left = new_tree;
         else{
-            p->left = KV(tree_insert_subtree)(cntr, p->left, key, new_tree, value);
+            p->left = KV(tree_insert_subtree)(aTHX_ cntr, p->left, key, new_tree, value);
             p = (KV(tree_t)*) maintain_larger_left(p);
         }
     }
     return p;
 }
-static inline void KV(tree_insert)(KV(tree_cntr_t) * cntr, T(KEY) key, T(VALUE) value){
+static inline void KV(tree_insert)(pTHX_ KV(tree_cntr_t) * cntr, T(KEY) key, T(VALUE) value){
     KV(tree_t) * new_tree = KV(allocate_cell)(cntr, key, value);
 
     if( UNLIKELY(cntr->root == (KV(tree_t)*) &nil) ){
@@ -392,23 +392,23 @@ static inline void KV(tree_insert)(KV(tree_cntr_t) * cntr, T(KEY) key, T(VALUE) 
         return;
     }
 
-    cntr->root = KV(tree_insert_subtree)(cntr, cntr->root, key, new_tree, value);
+    cntr->root = KV(tree_insert_subtree)(aTHX_ cntr, cntr->root, key, new_tree, value);
 }
 
-KV(tree_t) * KV(tree_delete_subtree)(KV(tree_cntr_t) * cntr, KV(tree_t) * tree, T(KEY) key){
+KV(tree_t) * KV(tree_delete_subtree)(pTHX_ KV(tree_cntr_t) * cntr, KV(tree_t) * tree, T(KEY) key){
     KV(tree_t) * c;
-    if( K(cmp)(tree->key, key, cntr->cmp) <= 0 ){
+    if( K(cmp)(aTHX_ tree->key, key, cntr->cmp) <= 0 ){
         if( tree->right == (KV(tree_t)*) &nil )
             return NULL;
 
-        if( K(cmp)(tree->right->key, key, cntr->cmp) == 0 ){
+        if( K(cmp)(aTHX_ tree->right->key, key, cntr->cmp) == 0 ){
             tree->right = (KV(tree_t)*) maintain_larger_right(KV(tree_delete_root)(cntr, tree->right));
             --tree->size;
             tree = (KV(tree_t)*) maintain_larger_left(tree);
             return tree;
         }
 
-        c = KV(tree_delete_subtree)(cntr, tree->right, key);
+        c = KV(tree_delete_subtree)(aTHX_ cntr, tree->right, key);
         if( c ){
             tree->right = c;
             --tree->size;
@@ -422,14 +422,14 @@ KV(tree_t) * KV(tree_delete_subtree)(KV(tree_cntr_t) * cntr, KV(tree_t) * tree, 
         if( tree->left == (KV(tree_t)*) &nil )
             return NULL;
 
-        if( K(cmp)(tree->left->key, key, cntr->cmp) == 0 ){
+        if( K(cmp)(aTHX_ tree->left->key, key, cntr->cmp) == 0 ){
             tree->left = (KV(tree_t)*) maintain_larger_right(KV(tree_delete_root)(cntr, tree->left));
             --tree->size;
             tree = (KV(tree_t)*) maintain_larger_right(tree);
             return tree;
         }
 
-        c = KV(tree_delete_subtree)(cntr, tree->left, key);
+        c = KV(tree_delete_subtree)(aTHX_ cntr, tree->left, key);
         if( c ){
             tree->left = c;
             --tree->size;
@@ -441,16 +441,16 @@ KV(tree_t) * KV(tree_delete_subtree)(KV(tree_cntr_t) * cntr, KV(tree_t) * tree, 
     }
 }
 
-static inline bool KV(tree_delete)(KV(tree_cntr_t) * cntr, T(KEY) key){
+static inline bool KV(tree_delete)(pTHX_ KV(tree_cntr_t) * cntr, T(KEY) key){
     if( UNLIKELY(cntr->root == (KV(tree_t)*) &nil) )
         return FALSE;
 
-    if( K(cmp)(cntr->root->key, key, cntr->cmp)==0 ){
+    if( K(cmp)(aTHX_ cntr->root->key, key, cntr->cmp)==0 ){
         cntr->root = (KV(tree_t)*) maintain_larger_right(KV(tree_delete_root)(cntr, cntr->root));
         return TRUE;
     }
 
-    KV(tree_t) * new_root = KV(tree_delete_subtree)(cntr, cntr->root, key);
+    KV(tree_t) * new_root = KV(tree_delete_subtree)(aTHX_ cntr, cntr->root, key);
     if( new_root ){
         cntr->root = new_root;
         return TRUE;
@@ -458,16 +458,16 @@ static inline bool KV(tree_delete)(KV(tree_cntr_t) * cntr, T(KEY) key){
     return FALSE;
 }
 
-static inline bool KV(tree_find)(KV(tree_cntr_t) * cntr, T(KEY) key, T(VALUE) * value_result){
+static inline bool KV(tree_find)(pTHX_ KV(tree_cntr_t) * cntr, T(KEY) key, T(VALUE) * value_result){
     KV(tree_t) * t = cntr->root;
     while( t != (KV(tree_t)*) &nil ){
-        if( K(cmp)(t->key, key, cntr->cmp) == 0 ){
+        if( K(cmp)(aTHX_ t->key, key, cntr->cmp) == 0 ){
 #if I(VALUE) != I(void)
             *value_result = t->value;
 #endif
             return TRUE;
         }
-        if( K(cmp)(t->key, key, cntr->cmp) <= 0 )
+        if( K(cmp)(aTHX_ t->key, key, cntr->cmp) <= 0 )
             t = t->right;
         else
             t = t->left;
@@ -523,46 +523,50 @@ static inline bool KV(tree_find)(KV(tree_cntr_t) * cntr, T(KEY) key, T(VALUE) * 
 #undef FUZZY_COUNT_FUNC
 #undef FUZZY_FIND_FUNC
 
-void KV(tree_dump_subtree)(int indent, KV(tree_t) * tree){
+void KV(tree_dump_subtree)(pTHX_ int indent, KV(tree_t) * tree){
     if( tree->right != (KV(tree_t)*) &nil )
-        KV(tree_dump_subtree)(indent+1, tree->right);
+        KV(tree_dump_subtree)(aTHX_ indent+1, tree->right);
     for(int i=0; i<indent; ++i)
         PerlIO_printf(PerlIO_stdout(), "  ");
 
 #if I(KEY) == I(int)
     T(KEY) key = tree->key;
 #   define KEY_FMT "%d"
+#   define KEY_FMT_TYPE (int)
 #elif I(KEY) == I(num)
     T(KEY) key = tree->key;
 #   define KEY_FMT "%lf"
+#   define KEY_FMT_TYPE (double)
 #else
     char * key = SvPV_nolen(tree->key);
 #   define KEY_FMT "%s"
+#   define KEY_FMT_TYPE (char*)
 #endif
-    PerlIO_printf(PerlIO_stdout(), "(" KEY_FMT ", %d)\n", key, tree->size);
+    PerlIO_printf(PerlIO_stdout(), "(" KEY_FMT ", %d)\n", KEY_FMT_TYPE key, (int) tree->size);
+#undef KEY_FMT_TYPE
 #undef KEY_FMT
 
     if( tree->left != (KV(tree_t)*) &nil )
-        KV(tree_dump_subtree)(indent+1, tree->left);
+        KV(tree_dump_subtree)(aTHX_ indent+1, tree->left);
 }
-static inline void KV(tree_dump)(KV(tree_cntr_t) * cntr){
+static inline void KV(tree_dump)(pTHX_ KV(tree_cntr_t) * cntr){
     if( cntr->root == (KV(tree_t)*) &nil ){
         puts("(empty tree)");
         return;
     }
-    KV(tree_dump_subtree)(0, cntr->root);
+    KV(tree_dump_subtree)(aTHX_ 0, cntr->root);
 }
 
 // 假設 tree 不是空的
-bool KV(tree_check_subtree_order)(KV(tree_cntr_t) * cntr, KV(tree_t) * tree){
-    if( tree->left != (KV(tree_t)*) &nil && (K(cmp)(tree->left->key, tree->key, cntr->cmp) > 0 || !KV(tree_check_subtree_order)(cntr, tree->left)) )
+bool KV(tree_check_subtree_order)(pTHX_ KV(tree_cntr_t) * cntr, KV(tree_t) * tree){
+    if( tree->left != (KV(tree_t)*) &nil && (K(cmp)(aTHX_ tree->left->key, tree->key, cntr->cmp) > 0 || !KV(tree_check_subtree_order)(aTHX_ cntr, tree->left)) )
         return FALSE;
-    if( tree->right != (KV(tree_t)*) &nil && (K(cmp)(tree->key, tree->right->key, cntr->cmp) > 0 || !KV(tree_check_subtree_order)(cntr, tree->right)) )
+    if( tree->right != (KV(tree_t)*) &nil && (K(cmp)(aTHX_ tree->key, tree->right->key, cntr->cmp) > 0 || !KV(tree_check_subtree_order)(aTHX_ cntr, tree->right)) )
         return FALSE;
     return TRUE;
 }
-static inline bool KV(tree_check_order)(KV(tree_cntr_t) * cntr){
+static inline bool KV(tree_check_order)(pTHX_ KV(tree_cntr_t) * cntr){
     if( cntr->root == (KV(tree_t)*) &nil )
         return TRUE;
-    return KV(tree_check_subtree_order)(cntr, cntr->root);
+    return KV(tree_check_subtree_order)(aTHX_ cntr, cntr->root);
 }

@@ -14,122 +14,122 @@
 #define str_t SV*
 #define any_t SV*
 
-static inline T(int) max_key_int(){
+static inline T(int) max_key_int(pTHX){
     return (((1 << (IVSIZE - 2)) - 1) << 1) + 1;
 }
-static inline T(int) min_key_int(){
+static inline T(int) min_key_int(pTHX){
     return -(((1 << (IVSIZE - 2)) - 1) << 1) - 2;
 }
-static inline T(num) max_key_num(){
+static inline T(num) max_key_num(pTHX){
     return INFINITY;
 }
-static inline T(num) min_key_num(){
+static inline T(num) min_key_num(pTHX){
     return -INFINITY;
 }
-static inline T(str) max_key_str(){
+static inline T(str) max_key_str(pTHX){
     return &PL_sv_undef;
 }
-static inline T(str) min_key_str(){
+static inline T(str) min_key_str(pTHX){
     return &PL_sv_undef;
 }
-static inline T(any) max_key_any(){
+static inline T(any) max_key_any(pTHX){
     return &PL_sv_undef;
 }
-static inline T(any) min_key_any(){
+static inline T(any) min_key_any(pTHX){
     return &PL_sv_undef;
 }
 
-static inline T(int) unknown_int(){
-    return min_key_int();
+static inline T(int) unknown_int(pTHX){
+    return min_key_int(aTHX);
 }
-static inline T(num) unknown_num(){
-    return min_key_num();
+static inline T(num) unknown_num(pTHX){
+    return min_key_num(aTHX);
 }
-static inline T(str) unknown_str(){
+static inline T(str) unknown_str(pTHX){
     return NULL;
 }
-static inline T(any) unknown_any(){
+static inline T(any) unknown_any(pTHX){
     return NULL;
 }
 
-static inline T(void) from_sv_void(SV * sv){
+static inline T(void) from_sv_void(pTHX_ SV * sv){
     return NULL;
 }
-static inline T(int) from_sv_int(SV * sv){
+static inline T(int) from_sv_int(pTHX_ SV * sv){
     return SvIV(sv);
 }
-static inline T(num) from_sv_num(SV * sv){
+static inline T(num) from_sv_num(pTHX_ SV * sv){
     return SvNV(sv);
 }
-static inline T(str) from_sv_str(SV * sv){
+static inline T(str) from_sv_str(pTHX_ SV * sv){
     return sv;
 }
-static inline T(any) from_sv_any(SV * sv){
+static inline T(any) from_sv_any(pTHX_ SV * sv){
     return sv;
 }
 
-static inline T(void) copy_sv_void(SV * sv){
+static inline T(void) copy_sv_void(pTHX_ SV * sv){
     return NULL;
 }
-static inline T(int) copy_sv_int(SV * sv){
+static inline T(int) copy_sv_int(pTHX_ SV * sv){
     return SvIV(sv);
 }
-static inline T(num) copy_sv_num(SV * sv){
+static inline T(num) copy_sv_num(pTHX_ SV * sv){
     return SvNV(sv);
 }
-static inline T(str) copy_sv_str(SV * sv){
+static inline T(str) copy_sv_str(pTHX_ SV * sv){
     return newSVsv(sv);
 }
-static inline T(any) copy_sv_any(SV * sv){
+static inline T(any) copy_sv_any(pTHX_ SV * sv){
     return newSVsv(sv);
 }
 
-static inline SV** ret_int(SV ** SP, T(int) key){
+static inline SV** ret_int(pTHX_ SV ** SP, T(int) key){
     dTARGET;
     PUSHi(key);
     return SP;
 }
-static inline SV** ret_num(SV ** SP, T(num) key){
+static inline SV** ret_num(pTHX_ SV ** SP, T(num) key){
     dTARGET;
     PUSHn(key);
     return SP;
 }
-static inline SV** ret_str(SV ** SP, T(str) key){
+static inline SV** ret_str(pTHX_ SV ** SP, T(str) key){
     PUSHs(key);
     return SP;
 }
-static inline SV** ret_any(SV ** SP, T(any) key){
+static inline SV** ret_any(pTHX_ SV ** SP, T(any) key){
     PUSHs(key);
     return SP;
 }
 
-static inline SV** mret_int(SV ** SP, T(int) key){
+static inline SV** mret_int(pTHX_ SV ** SP, T(int) key){
     mPUSHi(key);
     return SP;
 }
-static inline SV** mret_num(SV ** SP, T(num) key){
+static inline SV** mret_num(pTHX_ SV ** SP, T(num) key){
     mPUSHn(key);
     return SP;
 }
-static inline SV** mret_str(SV ** SP, T(str) key){
+static inline SV** mret_str(pTHX_ SV ** SP, T(str) key){
     PUSHs(key);
     return SP;
 }
-static inline SV** mret_any(SV ** SP, T(any) key){
+static inline SV** mret_any(pTHX_ SV ** SP, T(any) key){
     PUSHs(key);
     return SP;
 }
 
-static inline IV cmp_int(T(int) a, T(int) b, SV* cmp){
+static inline IV cmp_int(pTHX_ T(int) a, T(int) b, SV* cmp){
     return a - b;
 }
-static inline NV cmp_num(T(num) a, T(num) b, SV* cmp){
+static inline NV cmp_num(pTHX_ T(num) a, T(num) b, SV* cmp){
     return a - b;
 }
-static inline IV cmp_str(T(str) a, T(str) b, SV* cmp){
+static inline IV cmp_str(pTHX_ T(str) a, T(str) b, SV* cmp){
     return (IV) sv_cmp(a, b);
 }
-static inline IV cmp_any(T(any) a, T(any) b, SV* cmp){
+static inline IV cmp_any(pTHX_ T(any) a, T(any) b, SV* cmp){
     SV * a_SV = GvSV(a_GV);
     SV * b_SV = GvSV(b_GV);
     SvSetSV(a_SV, a);

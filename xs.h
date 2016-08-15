@@ -22,7 +22,7 @@ SV ** KV(new)(pTHX_ SV ** SP, SV * class, SV * cmp){
 
 SV ** KV(DESTROY)(pTHX_ SV ** SP, SV * obj){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
-    KV(empty_tree_cntr)(cntr);
+    KV(empty_tree_cntr)(aTHX_ cntr);
     Safefree(cntr);
     SvRV(SvRV(obj)) = NULL;
     return SP;
@@ -41,7 +41,7 @@ SV ** KV(insert)(pTHX_ SV** SP, SV * obj, SV * key, SV * value){
     save_scalar(a_GV);
     save_scalar(b_GV);
 
-    KV(tree_insert)(cntr, K(copy_sv)(key), V(copy_sv)(value));
+    KV(tree_insert)(aTHX_ cntr, K(copy_sv)(aTHX_ key), V(copy_sv)(aTHX_ value));
     return SP;
 }
 
@@ -54,7 +54,7 @@ SV ** KV(delete)(pTHX_ SV** SP, SV * obj, SV * key){
     SvREFCNT_inc_simple_void_NN(key);
 #endif
 
-    if( KV(tree_delete)(cntr, K(from_sv)(key)) )
+    if( KV(tree_delete)(aTHX_ cntr, K(from_sv)(aTHX_ key)) )
         PUSHs(&PL_sv_yes);
     else
         PUSHs(&PL_sv_no);
@@ -79,10 +79,10 @@ SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
 #endif
 
     T(VALUE) value_result;
-    if( KV(tree_find)(cntr, K(from_sv)(key), &value_result) ){
+    if( KV(tree_find)(aTHX_ cntr, K(from_sv)(aTHX_ key), &value_result) ){
         PUSHs(&PL_sv_yes);
 #if I(VALUE) != I(void)
-        SP = V(ret)(SP, value_result);
+        SP = V(ret)(aTHX_ SP, value_result);
 #endif
     }
     else
@@ -152,10 +152,10 @@ SV ** KV(find_min)(pTHX_ SV** SP, SV * obj){
         PUSHs(&PL_sv_undef);
     else{
         T(VALUE) value_result;
-        SP = K(ret)(SP, KV(tree_find_min)(cntr, &value_result));
+        SP = K(ret)(aTHX_ SP, KV(tree_find_min)(cntr, &value_result));
 #if I(VALUE) != I(void)
         if( GIMME_V == G_ARRAY )
-            SP = V(mret)(SP, value_result);
+            SP = V(mret)(aTHX_ SP, value_result);
 #endif
     }
     return SP;
@@ -167,10 +167,10 @@ SV ** KV(find_max)(pTHX_ SV** SP, SV * obj){
         PUSHs(&PL_sv_undef);
     else{
         T(VALUE) value_result;
-        SP = K(ret)(SP, KV(tree_find_max)(cntr, &value_result));
+        SP = K(ret)(aTHX_ SP, KV(tree_find_max)(cntr, &value_result));
 #if I(VALUE) != I(void)
         if( GIMME_V == G_ARRAY )
-            SP = V(mret)(SP, value_result);
+            SP = V(mret)(aTHX_ SP, value_result);
 #endif
     }
     return SP;
@@ -182,10 +182,10 @@ SV ** KV(skip_l)(pTHX_ SV** SP, SV * obj, int offset){
         PUSHs(&PL_sv_undef);
     else{
         T(VALUE) value_result;
-        SP = K(ret)(SP, KV(tree_skip_l)(cntr, offset, &value_result));
+        SP = K(ret)(aTHX_ SP, KV(tree_skip_l)(cntr, offset, &value_result));
 #if I(VALUE) != I(void)
         if( GIMME_V == G_ARRAY )
-            SP = V(mret)(SP, value_result);
+            SP = V(mret)(aTHX_ SP, value_result);
 #endif
     }
     return SP;
@@ -197,10 +197,10 @@ SV ** KV(skip_g)(pTHX_ SV** SP, SV * obj, int offset){
         PUSHs(&PL_sv_undef);
     else{
         T(VALUE) value_result;
-        SP = K(ret)(SP, KV(tree_skip_g)(cntr, offset, &value_result));
+        SP = K(ret)(aTHX_ SP, KV(tree_skip_g)(cntr, offset, &value_result));
 #if I(VALUE) != I(void)
         if( GIMME_V == G_ARRAY )
-            SP = V(mret)(SP, value_result);
+            SP = V(mret)(aTHX_ SP, value_result);
 #endif
     }
     return SP;
@@ -208,7 +208,7 @@ SV ** KV(skip_g)(pTHX_ SV** SP, SV * obj, int offset){
 
 SV ** KV(dump)(pTHX_ SV** SP, SV *obj){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
-    KV(tree_dump)(cntr);
+    KV(tree_dump)(aTHX_ cntr);
     return SP;
 }
 
@@ -220,7 +220,7 @@ SV ** KV(check)(pTHX_ SV** SP, SV * obj){
 
     EXTEND(SP, 3);
 
-    if( KV(tree_check_order)(cntr) )
+    if( KV(tree_check_order)(aTHX_ cntr) )
         PUSHs(&PL_sv_yes);
     else
         PUSHs(&PL_sv_no);

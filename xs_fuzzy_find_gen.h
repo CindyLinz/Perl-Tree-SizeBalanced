@@ -10,14 +10,14 @@ SV ** KV(XS_FUZZY_FIND_FUNC)(pTHX_ SV** SP, SV * obj, SV * key){
 #endif
 
     T(VALUE) value_result;
-    T(KEY) found = KV(FUZZY_FIND_FUNC)(cntr, K(from_sv)(key), &value_result);
-    if( found == K(unknown)() )
+    T(KEY) found = KV(FUZZY_FIND_FUNC)(aTHX_ cntr, K(from_sv)(aTHX_ key), &value_result);
+    if( found == K(unknown)(aTHX) )
         PUSHs(&PL_sv_undef);
     else{
-        SP = K(ret)(SP, found);
+        SP = K(ret)(aTHX_ SP, found);
 #if I(VALUE) != I(void)
         if( GIMME_V == G_ARRAY )
-            SP = V(mret)(SP, value_result);
+            SP = V(mret)(aTHX_ SP, value_result);
 #endif
     }
 
