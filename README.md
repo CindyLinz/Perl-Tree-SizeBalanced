@@ -70,23 +70,17 @@ Quoted from [http://wcipeg.com/wiki/Size\_Balanced\_Tree](http://wcipeg.com/wiki
 
 For performance consideration, this module provides trees with many stricter types.
 
-If you choose integers as the key type, don't use the least number (-2147483647 or -9223372036854775808 according to your perl version) as a key. The tree uses it to indicate \`not found' internally for performance reason.
-
-If you choose integers as the key type, don't use "-nan" as a key. The tree uses it to indicate \`not found' internally for performance reason.
-
 If you choose any scalar as the key type, you must provide a comparing sub.
 The comparing sub should exammed localized `$a` and `$b` (or `$::a` and `$::b` if there are introduced lexical &lt;$a> and &lt;$b> right outside the sub).
 And if your comparing sub using an indirect way to judge the size of the keys,
 don't do anything that will change the judge result. Or, the tree will be confused and give you incorrect results.
 
-If you put more than one entries with equal-sized keys, the order between them is not garenteed.
-
-The `find` and `delete` methods will try to pick any entries with the same key size as the provided one,
-they won't try to find the identical one.
+If you put more than one entries with equal-sized keys,
+the insertion order is preserved by treating the first one as the smallest one among them.
 
 PS. Qifeng Chen is 陈启峰 in simplified Chinese.
 
-This module has been tested on perl version 5.8.9, 5.10.1, 5.12.5, 5.14.4, 5.16.3, 5.18.4, 5.20.3, 5.22.1, 5.22.2
+This module has been tested on perl version 5.8.9, 5.10.1, 5.12.5, 5.14.4, 5.16.3, 5.18.4, 5.20.3, 5.22.2
 
 ## EXPORT
 

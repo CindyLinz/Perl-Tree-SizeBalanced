@@ -14,44 +14,6 @@
 #define str_t SV*
 #define any_t SV*
 
-static inline T(int) max_key_int(pTHX){
-    return (((1 << (IVSIZE - 2)) - 1) << 1) + 1;
-}
-static inline T(int) min_key_int(pTHX){
-    return -(((1 << (IVSIZE - 2)) - 1) << 1) - 2;
-}
-static inline T(num) max_key_num(pTHX){
-    return INFINITY;
-}
-static inline T(num) min_key_num(pTHX){
-    return -INFINITY;
-}
-static inline T(str) max_key_str(pTHX){
-    return &PL_sv_undef;
-}
-static inline T(str) min_key_str(pTHX){
-    return &PL_sv_undef;
-}
-static inline T(any) max_key_any(pTHX){
-    return &PL_sv_undef;
-}
-static inline T(any) min_key_any(pTHX){
-    return &PL_sv_undef;
-}
-
-static inline T(int) unknown_int(pTHX){
-    return min_key_int(aTHX);
-}
-static inline T(num) unknown_num(pTHX){
-    return min_key_num(aTHX);
-}
-static inline T(str) unknown_str(pTHX){
-    return NULL;
-}
-static inline T(any) unknown_any(pTHX){
-    return NULL;
-}
-
 static inline T(void) from_sv_void(pTHX_ SV * sv){
     return NULL;
 }
