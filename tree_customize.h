@@ -120,22 +120,40 @@ static inline SV** mret_any(pTHX_ SV ** SP, T(any) key){
     return SP;
 }
 
-static inline IV cmp_int(pTHX_ T(int) a, T(int) b, SV* cmp){
+static inline SV** mxret_int(pTHX_ SV ** SP, T(int) key){
+    mXPUSHi(key);
+    return SP;
+}
+static inline SV** mxret_num(pTHX_ SV ** SP, T(num) key){
+    mXPUSHn(key);
+    return SP;
+}
+static inline SV** mxret_str(pTHX_ SV ** SP, T(str) key){
+    XPUSHs(key);
+    return SP;
+}
+static inline SV** mxret_any(pTHX_ SV ** SP, T(any) key){
+    XPUSHs(key);
+    return SP;
+}
+
+static inline IV cmp_int(pTHX_ SV**SP, T(int) a, T(int) b, SV* cmp){
     return a - b;
 }
-static inline NV cmp_num(pTHX_ T(num) a, T(num) b, SV* cmp){
+static inline NV cmp_num(pTHX_ SV**SP, T(num) a, T(num) b, SV* cmp){
     return a - b;
 }
-static inline IV cmp_str(pTHX_ T(str) a, T(str) b, SV* cmp){
+static inline IV cmp_str(pTHX_ SV**SP, T(str) a, T(str) b, SV* cmp){
     return (IV) sv_cmp(a, b);
 }
-static inline IV cmp_any(pTHX_ T(any) a, T(any) b, SV* cmp){
+static inline IV cmp_any(pTHX_ SV**SP, T(any) a, T(any) b, SV* cmp){
     SV * a_SV = GvSV(a_GV);
     SV * b_SV = GvSV(b_GV);
     SvSetSV(a_SV, a);
     SvSetSV(b_SV, b);
 
-    dSP;
+    //dSP;
+    PUTBACK;
 
     PUSHMARK(SP);
     I32 ret_count = call_sv(cmp, G_SCALAR | G_NOARGS);
@@ -146,7 +164,7 @@ static inline IV cmp_any(pTHX_ T(any) a, T(any) b, SV* cmp){
     if( ret_count==1 )
         res = POPi;
 
-    PUTBACK;
+    //PUTBACK;
 
     //return cmp(a, b);
     return res;

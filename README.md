@@ -52,6 +52,12 @@ Handy for in-memory realtime ranking systems.
     ($key, $value) = $tree->find_max;
     $key = $tree->find_max;
 
+    ($k1, $v1, $k2, $v2) = $tree->find_min(2);
+    ($k1, $v1, $k2, $v2, $k3, $v3) = $tree->find_min(3);
+    ($k1, $v1, $k2, $v2, $k3, $v3, ...) = $tree->find_min(-1);
+
+    ($k1, $v1, ...= $tree->find_lt_gt($lower_bound, $upper_bound);
+
     ...
 
     $tree->delete(1);
@@ -60,23 +66,23 @@ Handy for in-memory realtime ranking systems.
 
 Quoted from [http://wcipeg.com/wiki/Size\_Balanced\_Tree](http://wcipeg.com/wiki/Size_Balanced_Tree):
 
-> A size balanced tree (SBT) is a self-balancing binary search tree (BBST) first published by Chinese student Qifeng Chen in 2007. The tree is rebalanced by examining the sizes of each node's subtrees. Its abbreviation resulted in many nicknames given by Chinese informatics competitors, including "sha bi" tree (Chinese: 傻屄树; pinyin: shǎ bī shù; literally meaning "dumb cunt tree") and "super BT", which is a homophone to the Chinese term for snot (Chinese: 鼻涕; pinyin: bítì) suggesting that it is messy to implement. Contrary to what its nicknames suggest, this data structure can be very useful, and is also known to be easy to implement. Since the only extra piece of information that needs to be stored is sizes of the nodes (instead of other "useless" fields such as randomized weights in treaps or colours in red–black tress), this makes it very convenient to implement the select-by-rank and get-rank operations (easily transforming it into an order statistic tree). It supports standard binary search tree operations such as insertion, deletion, and searching in O(log n) time. According to Chen's paper, "it works much faster than many other famous BSTs due to the tendency of a perfect BST in practice."
+\> A size balanced tree (SBT) is a self-balancing binary search tree (BBST) first published by Chinese student Qifeng Chen in 2007. The tree is rebalanced by examining the sizes of each node's subtrees. Its abbreviation resulted in many nicknames given by Chinese informatics competitors, including "sha bi" tree (Chinese: 傻屄树; pinyin: shǎ bī shù; literally meaning "dumb cunt tree") and "super BT", which is a homophone to the Chinese term for snot (Chinese: 鼻涕; pinyin: bítì) suggesting that it is messy to implement. Contrary to what its nicknames suggest, this data structure can be very useful, and is also known to be easy to implement. Since the only extra piece of information that needs to be stored is sizes of the nodes (instead of other "useless" fields such as randomized weights in treaps or colours in red–black tress), this makes it very convenient to implement the select-by-rank and get-rank operations (easily transforming it into an order statistic tree). It supports standard binary search tree operations such as insertion, deletion, and searching in O(log n) time. According to Chen's paper, "it works much faster than many other famous BSTs due to the tendency of a perfect BST in practice."
 
 For performance consideration, this module provides trees with many stricter types.
 
-If you choose integers as the key type, don't use the least number (-2147483647 or -9223372036854775808 according to your perl version) as a key. The tree uses it to indicate \`not found' internally.
+If you choose integers as the key type, don't use the least number (-2147483647 or -9223372036854775808 according to your perl version) as a key. The tree uses it to indicate \`not found' internally for performance reason.
 
-If you choose integers as the key type, don't use "-nan" as a key. The tree uses it to indicate \`not found' internally.
+If you choose integers as the key type, don't use "-nan" as a key. The tree uses it to indicate \`not found' internally for performance reason.
 
 If you choose any scalar as the key type, you must provide a comparing sub.
-The comparing sub should examed localized `$a` and `$b` (or `$::a` and `$::b` if there are introduced lexical &lt;$a> and &lt;$b> right outside the sub).
+The comparing sub should exammed localized `$a` and `$b` (or `$::a` and `$::b` if there are introduced lexical &lt;$a> and &lt;$b> right outside the sub).
 And if your comparing sub using an indirect way to judge the size of the keys,
 don't do anything that will change the judge result. Or, the tree will be confused and give you incorrect results.
 
 If you put more than one entries with equal-sized keys, the order between them is not garenteed.
 
 The `find` and `delete` methods will try to pick any entries with the same key size as the provided one,
-it won't try to find the identical one.
+they won't try to find the identical one.
 
 PS. Qifeng Chen is 陈启峰 in simplified Chinese.
 
@@ -119,68 +125,159 @@ Tree set with key type signed integers (32bits or 64bits according to your perl 
     Creat a new empty tree.
 
 - $tree->insert($key)
+- $tree->insert\_after($key)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- $found\_or\_not = $tree->find($key)
+- $key or ($key1, $key2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $key2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $key2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key = $tree->find\_gt($key)
+- $key or ($key1, $key2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $key2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key = $tree->find\_max
+- $key or ($key1, $key2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $key2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $key2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $key2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $key2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $key2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $key2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::int\_int
 
@@ -193,68 +290,159 @@ Tree map with key type signed integers (32bits or 64bits according to your perl 
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::int\_num
 
@@ -267,68 +455,159 @@ Tree map with key type signed integers (32bits or 64bits according to your perl 
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::int\_any
 
@@ -341,68 +620,159 @@ Tree map with key type signed integers (32bits or 64bits according to your perl 
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::num\_void
 
@@ -415,68 +785,159 @@ Tree set with key type numeric numbers (floating point numbers).
     Creat a new empty tree.
 
 - $tree->insert($key)
+- $tree->insert\_after($key)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- $found\_or\_not = $tree->find($key)
+- $key or ($key1, $key2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $key2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $key2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key = $tree->find\_gt($key)
+- $key or ($key1, $key2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $key2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key = $tree->find\_max
+- $key or ($key1, $key2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $key2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $key2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $key2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $key2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $key2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $key2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::num\_int
 
@@ -489,68 +950,159 @@ Tree map with key type numeric numbers (floating point numbers) and value type s
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::num\_num
 
@@ -563,68 +1115,159 @@ Tree map with key type numeric numbers (floating point numbers) and value type n
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::num\_any
 
@@ -637,68 +1280,159 @@ Tree map with key type numeric numbers (floating point numbers) and value type a
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::str\_void
 
@@ -711,68 +1445,159 @@ Tree set with key type strings.
     Creat a new empty tree.
 
 - $tree->insert($key)
+- $tree->insert\_after($key)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- $found\_or\_not = $tree->find($key)
+- $key or ($key1, $key2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $key2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $key2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key = $tree->find\_gt($key)
+- $key or ($key1, $key2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $key2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key = $tree->find\_max
+- $key or ($key1, $key2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $key2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $key2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $key2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $key2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $key2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $key2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::str\_int
 
@@ -785,68 +1610,159 @@ Tree map with key type strings and value type signed integers (32bits or 64bits 
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::str\_num
 
@@ -859,68 +1775,159 @@ Tree map with key type strings and value type numeric numbers (floating point nu
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::str\_any
 
@@ -933,68 +1940,159 @@ Tree map with key type strings and value type any scalars.
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::any\_void
 
@@ -1007,68 +2105,159 @@ Tree set with key type any scalars.
     Creat a new empty tree.
 
 - $tree->insert($key)
+- $tree->insert\_after($key)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- $found\_or\_not = $tree->find($key)
+- $key or ($key1, $key2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $key2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $key2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key = $tree->find\_gt($key)
+- $key or ($key1, $key2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $key2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key = $tree->find\_max
+- $key or ($key1, $key2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $key2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $key2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $key2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $key2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $key2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $key2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $key2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::any\_int
 
@@ -1081,68 +2270,159 @@ Tree map with key type any scalars and value type signed integers (32bits or 64b
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::any\_num
 
@@ -1155,68 +2435,159 @@ Tree map with key type any scalars and value type numeric numbers (floating poin
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
 
 ### Tree::SizeBalanced::any\_any
 
@@ -1229,68 +2600,177 @@ Tree map with key type any scalars and value type any scalars.
     Creat a new empty tree.
 
 - $tree->insert($key, $value)
+- $tree->insert\_after($key, $value)
 
-    Insert an entry into the tree
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one after them.
+
+- $tree->insert\_before($key, $value)
+
+    Insert an entry into the tree.
+    If there are any entries with the same key size,
+    insert the new one before them.
 
 - $tree->delete($key)
+- $tree->delete\_last($key)
 
-    Delete one entry which is equal to $key
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the last inserted one.
+
+- $tree->delete\_first($key)
+
+    Delete one entry whose key is equal to $key.
+    If there ary more than one entry with the same key size,
+    delete the first inserted one.
 
 - $size = $tree->size
 
     Get the number of entries in the tree
 
-- ($found\_or\_not, $value) = $tree->find($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find($key, $limit=1)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_first($key, $limit=1)
 
-    Get the entry which is equal to $key.
+    Get entries with key sizes equal to $key,
+    from the first inserted one to the last inserted one.
 
-- $key or ($key, $value) = $tree->find\_lt($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the largest entry which is smaller than $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_last($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_le($key)
+    Get entries with key sizes equal to $key,
+    from the last inserted one to the first inserted one.
 
-    Get the largest entry which is smaller than or equal to $key.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_gt($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_lt($key, $limit=1)
 
-    Get the smallest entry which is greater than $key.
+    Get entries, whose keys are smaller than $key, from the largest entry.
 
-- $key or ($key, $value) = $tree->find\_ge($key)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the smallest entry which is greater than or equal to $key.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_le($key, $limit=1)
 
-- $key or ($key, $value) = $tree->find\_min
+    Get entries, whose keys are smaller than or equal to $key, from the largest entry.
 
-    Get the smallest entry.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $key or ($key, $value) = $tree->find\_max
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt($key, $limit=1)
 
-    Get the largest entry.
+    Get entries, whose keys are greater than $key, from the smallest one.
 
-- $key or ($key, $value) = &tree->skip\_l($offset)
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-    Get the first entry from the smallest one after skipping $offset entries.
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge($key, $limit=1)
 
-- $key or ($key, $value) = &tree->skip\_g($offset)
+    Get entries, whose keys are greater than or equal to $key, from the smallest one.
 
-    Get the first entry from the largest one after skipping $offset entries.
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
 
-- $count = $tree->count\_l($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_lt($lower\_key, $upper\_key)
 
-    How many entries which is smaller than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
 
-- $count = $tree->count\_g($key)
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_gt\_le($lower\_key, $upper\_key)
 
-    How many entries which is greater than $key.
+    Get entries, whose keys are greater than $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
 
-- $tree->dump
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_lt($lower\_key, $upper\_key)
 
-    Print the whole tree to STDOUT. For debug use.
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_ge\_le($lower\_key, $upper\_key)
+
+    Get entries, whose keys are greater than or equal to $lower\_key and smaller than or equal to $upper\_key,
+    from the smallest one to the largest one.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_min($limit=1)
+
+    Get entries from the one with smallest key.
+    If there are more than one entries with smallest key,
+    begin from the first inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = $tree->find\_max($limit=1)
+
+    Get entries from the one with largest key.
+    If there are more than one entries with smallest key,
+    begin from the last inserted one.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_l($offset, $limit=1)
+
+    Get the first entry from one with the smallest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $key or ($key1, $value1, $key2, $value2, ...) = &tree->skip\_g($offset, $limit=1)
+
+    Get the first entry from one with the largest key after skipping $offset entries.
+
+    The optional $limit (default 1) indicates the maximum entry number you will get,
+    $limit=-1 means unlimited.
+
+- $count = $tree->count\_lt($key)
+
+    Get the number of entries whose keys are smaller than $key.
+
+- $count = $tree->count\_le($key)
+
+    Get the number of entries whose keys are smaller than or equal to $key.
+
+- $count = $tree->count\_gt($key)
+
+    Get the number of entries whose keys are greater than $key.
+
+- $count = $tree->count\_ge($key)
+
+    Get the number of entries whose keys are greater than or equal to $key.
+
+- $dump\_str = $tree->dump
+
+    Get a string which represent the whole tree structure. For debug use.
 
 - ($order\_consistent, $size\_consistent, $balanced) = $tree->check
 
     Check the tree property. For debug use.
+
+- $ever\_height = $tree->ever\_height
+
+    Get the maximum height the tree has ever been. For debug use
+
+### Default type constructors
+
+- $tree = Tree::SizeBalanced->new;
+
+    equivalent to `$tree = Tree::SizeBalanced::int_any->new;`
+
+- $tree = Tree::SizeBalanced->new sub { $a cmp $b };
+
+    equivalent to `$tree = Tree::SizeBalanced::any_any->new;`
+
+- $tree = sbtree;
+
+    equivalent to `$tree = sbtreeia`
+
+- $tree = sbtree { $a cmp $b };
+
+    equivalent to `$tree = sbtreeaa`
 
 # SEE ALSO
 
@@ -1314,3 +2794,7 @@ Copyright (C) 2016 by CindyLinz
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.22.1 or,
 at your option, any later version of Perl 5 you may have available.
+
+# ACKNOWLEDGEMENT
+
+Thank TDYa127 [https://github.com/a127a127/](https://github.com/a127a127/) who tell me size balanced tree.

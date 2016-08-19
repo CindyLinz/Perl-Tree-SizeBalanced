@@ -10,7 +10,7 @@ SV ** KV(XS_FUZZY_COUNT_FUNC)(pTHX_ SV** SP, SV * obj, SV * key){
     SvREFCNT_inc_simple_void_NN(key);
 #endif
 
-    PUSHu(KV(FUZZY_COUNT_FUNC)(aTHX_ cntr, K(from_sv)(aTHX_ key)));
+    PUSHu(KV(FUZZY_COUNT_FUNC)(aTHX_ SP, cntr, K(from_sv)(aTHX_ key)));
 
 #if I(KEY) == I(any)
 #   ifdef SvREFCNT_dec_NN

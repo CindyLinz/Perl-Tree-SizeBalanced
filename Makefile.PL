@@ -99,17 +99,15 @@ our %EXPORT_TAGS = (
             my $new_trailing = $key eq 'any' ? " sub { \$a cmp \$b }" : '';
             my $func_trailing = $key eq 'any' ? " { \$a cmp \$b }" : '';
 
-            my($desc, $key_value_arg, $key_value_ret, $found_value);
+            my($desc, $key_value_arg, $key_value_ret);
             if( $value eq 'void' ) {
                 $desc = "Tree set with key type $type_name{$key}.";
                 $key_value_arg = '($key)';
-                $key_value_ret = '$key';
-                $found_value = '$found_or_not';
+                $key_value_ret = '$key or ($key1, $key2, ...)';
             } else {
                 $desc = "Tree map with key type $type_name{$key} and value type $type_name{$value}.";
                 $key_value_arg = '($key, $value)';
-                $key_value_ret = '$key or ($key, $value)';
-                $found_value = '($found_or_not, $value)';
+                $key_value_ret = '$key or ($key1, $value1, $key2, $value2, ...)';
             }
 
             $insert_code .= <<".";
@@ -130,67 +128,161 @@ Creat a new empty tree.
 
 =item \$tree->insert$key_value_arg
 
-Insert an entry into the tree
+=item \$tree->insert_after$key_value_arg
+
+Insert an entry into the tree.
+If there are any entries with the same key size,
+insert the new one after them.
+
+=item \$tree->insert_before$key_value_arg
+
+Insert an entry into the tree.
+If there are any entries with the same key size,
+insert the new one before them.
 
 =item \$tree->delete(\$key)
 
-Delete one entry which is equal to \$key
+=item \$tree->delete_last(\$key)
+
+Delete one entry whose key is equal to \$key.
+If there ary more than one entry with the same key size,
+delete the last inserted one.
+
+=item \$tree->delete_first(\$key)
+
+Delete one entry whose key is equal to \$key.
+If there ary more than one entry with the same key size,
+delete the first inserted one.
 
 =item \$size = \$tree->size
 
 Get the number of entries in the tree
 
-=item $found_value = \$tree->find(\$key)
+=item $key_value_ret = \$tree->find(\$key, \$limit=1)
 
-Get the entry which is equal to \$key.
+=item $key_value_ret = \$tree->find_first(\$key, \$limit=1)
 
-=item $key_value_ret = \$tree->find_lt(\$key)
+Get entries with key sizes equal to \$key,
+from the first inserted one to the last inserted one.
 
-Get the largest entry which is smaller than \$key.
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
 
-=item $key_value_ret = \$tree->find_le(\$key)
+=item $key_value_ret = \$tree->find_last(\$key, \$limit=1)
 
-Get the largest entry which is smaller than or equal to \$key.
+Get entries with key sizes equal to \$key,
+from the last inserted one to the first inserted one.
 
-=item $key_value_ret = \$tree->find_gt(\$key)
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
 
-Get the smallest entry which is greater than \$key.
+=item $key_value_ret = \$tree->find_lt(\$key, \$limit=1)
 
-=item $key_value_ret = \$tree->find_ge(\$key)
+Get entries, whose keys are smaller than \$key, from the largest entry.
 
-Get the smallest entry which is greater than or equal to \$key.
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
 
-=item $key_value_ret = \$tree->find_min
+=item $key_value_ret = \$tree->find_le(\$key, \$limit=1)
 
-Get the smallest entry.
+Get entries, whose keys are smaller than or equal to \$key, from the largest entry.
 
-=item $key_value_ret = \$tree->find_max
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
 
-Get the largest entry.
+=item $key_value_ret = \$tree->find_gt(\$key, \$limit=1)
 
-=item $key_value_ret = \&tree->skip_l(\$offset)
+Get entries, whose keys are greater than \$key, from the smallest one.
 
-Get the first entry from the smallest one after skipping \$offset entries.
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
 
-=item $key_value_ret = \&tree->skip_g(\$offset)
+=item $key_value_ret = \$tree->find_ge(\$key, \$limit=1)
 
-Get the first entry from the largest one after skipping \$offset entries.
+Get entries, whose keys are greater than or equal to \$key, from the smallest one.
 
-=item \$count = \$tree->count_l(\$key)
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
 
-How many entries which is smaller than \$key.
+=item $key_value_ret = \$tree->find_gt_lt(\$lower_key, \$upper_key)
 
-=item \$count = \$tree->count_g(\$key)
+Get entries, whose keys are greater than \$lower_key and smaller than \$upper_key,
+from the smallest one to the largest one.
 
-How many entries which is greater than \$key.
+=item $key_value_ret = \$tree->find_gt_le(\$lower_key, \$upper_key)
 
-=item \$tree->dump
+Get entries, whose keys are greater than \$lower_key and smaller than or equal to \$upper_key,
+from the smallest one to the largest one.
 
-Print the whole tree to STDOUT. For debug use.
+=item $key_value_ret = \$tree->find_ge_lt(\$lower_key, \$upper_key)
+
+Get entries, whose keys are greater than or equal to \$lower_key and smaller than \$upper_key,
+from the smallest one to the largest one.
+
+=item $key_value_ret = \$tree->find_ge_le(\$lower_key, \$upper_key)
+
+Get entries, whose keys are greater than or equal to \$lower_key and smaller than or equal to \$upper_key,
+from the smallest one to the largest one.
+
+=item $key_value_ret = \$tree->find_min(\$limit=1)
+
+Get entries from the one with smallest key.
+If there are more than one entries with smallest key,
+begin from the first inserted one.
+
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
+
+=item $key_value_ret = \$tree->find_max(\$limit=1)
+
+Get entries from the one with largest key.
+If there are more than one entries with smallest key,
+begin from the last inserted one.
+
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
+
+=item $key_value_ret = \&tree->skip_l(\$offset, \$limit=1)
+
+Get the first entry from one with the smallest key after skipping \$offset entries.
+
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
+
+=item $key_value_ret = \&tree->skip_g(\$offset, \$limit=1)
+
+Get the first entry from one with the largest key after skipping \$offset entries.
+
+The optional \$limit (default 1) indicates the maximum entry number you will get,
+\$limit=-1 means unlimited.
+
+=item \$count = \$tree->count_lt(\$key)
+
+Get the number of entries whose keys are smaller than \$key.
+
+=item \$count = \$tree->count_le(\$key)
+
+Get the number of entries whose keys are smaller than or equal to \$key.
+
+=item \$count = \$tree->count_gt(\$key)
+
+Get the number of entries whose keys are greater than \$key.
+
+=item \$count = \$tree->count_ge(\$key)
+
+Get the number of entries whose keys are greater than or equal to \$key.
+
+=item \$dump_str = \$tree->dump
+
+Get a string which represent the whole tree structure. For debug use.
 
 =item (\$order_consistent, \$size_consistent, \$balanced) = \$tree->check
 
 Check the tree property. For debug use.
+
+=item \$ever_height = \$tree->ever_height
+
+Get the maximum height the tree has ever been. For debug use
 
 =back
 

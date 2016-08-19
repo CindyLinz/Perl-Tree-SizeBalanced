@@ -20,7 +20,7 @@ our @ISA = qw(Exporter);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 
-our $VERSION = '1.003000';
+our $VERSION = '2.000000';
 
 =head1 NAME
 
@@ -75,6 +75,12 @@ Handy for in-memory realtime ranking systems.
   $key = $tree->find_min;
   ($key, $value) = $tree->find_max;
   $key = $tree->find_max;
+
+  ($k1, $v1, $k2, $v2) = $tree->find_min(2);
+  ($k1, $v1, $k2, $v2, $k3, $v3) = $tree->find_min(3);
+  ($k1, $v1, $k2, $v2, $k3, $v3, ...) = $tree->find_min(-1);
+
+  ($k1, $v1, ...= $tree->find_lt_gt($lower_bound, $upper_bound);
 
   ...
 
@@ -148,11 +154,11 @@ With the short form:
 
 =item $tree = Tree::SizeBalanced->new;
 
-equivalent to C<<$tree = Tree::SizeBalanced::int_any->new;>>
+equivalent to C<< $tree = Tree::SizeBalanced::int_any->new; >>
 
 =item $tree = Tree::SizeBalanced->new sub { $a cmp $b };
 
-equivalent to C<<$tree = Tree::SizeBalanced::any_any->new;>>
+equivalent to C<< $tree = Tree::SizeBalanced::any_any->new; >>
 
 =item $tree = sbtree;
 

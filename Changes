@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+2.000000    2016.8.19
+            add bulk query, and make methods sensitive to the inserting order
+
 1.003000    2016.8.15
             add default type constructor, MANIFEST generated SizeBalanced.pm file for cpan document
 

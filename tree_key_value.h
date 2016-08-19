@@ -27,6 +27,7 @@ typedef struct KV(tree_cntr_t) {
     KV(tree_t) * root; // (init 後, empty 前) 永不為空, 一開始指向 nil
     KV(tree_t) * free_slot;
     KV(tree_seg_t) * newest_seg;
+    int ever_height;
 } KV(tree_cntr_t);
 
 static inline KV(tree_cntr_t) * KV(assure_tree_cntr)(SV * obj){
@@ -287,247 +288,205 @@ static inline KV(tree_t) * KV(tree_replace_cell)(KV(tree_t) * tree){
 static inline KV(tree_t) * KV(tree_delete_root)(KV(tree_cntr_t) * cntr, KV(tree_t) * tree){
     KV(tree_t) * new_root = KV(tree_replace_cell)(tree);
     KV(free_cell)(cntr, tree);
-    return new_root;
+    return (KV(tree_t)*) maintain_larger_right(new_root);
 }
 
 static inline int KV(tree_size)(KV(tree_cntr_t) * cntr){
     return cntr->root->size;
 }
 
-// 假設 tree 不是空的
-static inline T(KEY) KV(tree_find_min)(KV(tree_cntr_t) * cntr, T(VALUE) * value_result){
-    KV(tree_t) * t = cntr->root;
-    while( t->left != (KV(tree_t)*) &nil )
-        t = t->left;
-#if I(VALUE) != I(void)
-    *value_result = t->value;;
-#endif
-    return t->key;
-}
+#define MIN_MAX_FIND_FUNC tree_find_min
+#define SKIP_FIND_FUNC tree_skip_l
+#define MIN_MAX_FIND_GOOD_DIR left
+#define MIN_MAX_FIND_BAD_DIR right
+#include "min_max_find_gen.h"
+#undef MIN_MAX_FIND_BAD_DIR
+#undef MIN_MAX_FIND_GOOD_DIR
+#undef SKIP_FIND_FUNC
+#undef MIN_MAX_FIND_FUNC
 
-// 假設 tree 不是空的
-static inline T(KEY) KV(tree_find_max)(KV(tree_cntr_t) * cntr, T(VALUE) * value_result){
-    KV(tree_t) * t = cntr->root;
-    while( t->right != (KV(tree_t)*) &nil )
-        t = t->right;
-#if I(VALUE) != I(void)
-    *value_result = t->value;;
-#endif
-    return t->key;
-}
-
-// 假設 0 <= offset < root->size
-static inline T(KEY) KV(tree_skip_l)(KV(tree_cntr_t) * cntr, int offset, T(VALUE) * value_result){
-    KV(tree_t) * t = cntr->root;
-    while(TRUE){
-        if( offset == t->left->size ){
-#if I(VALUE) != I(void)
-            *value_result = t->value;;
-#endif
-            return t->key;
-        }
-        if( offset < t->left->size )
-            t = t->left;
-        else{
-            offset -= t->left->size + 1;
-            t = t->right;
-        }
-    }
-}
-
-// 假設 0 <= offset < root->size
-static inline T(KEY) KV(tree_skip_g)(KV(tree_cntr_t) * cntr, int offset, T(VALUE) * value_result){
-    KV(tree_t) * t = cntr->root;
-    while(TRUE){
-        if( offset == t->right->size ){
-#if I(VALUE) != I(void)
-            *value_result = t->value;;
-#endif
-            return t->key;
-        }
-        if( offset < t->right->size )
-            t = t->right;
-        else{
-            offset -= t->right->size + 1;
-            t = t->left;
-        }
-    }
-}
+#define MIN_MAX_FIND_FUNC tree_find_max
+#define SKIP_FIND_FUNC tree_skip_g
+#define MIN_MAX_FIND_GOOD_DIR right
+#define MIN_MAX_FIND_BAD_DIR left
+#include "min_max_find_gen.h"
+#undef MIN_MAX_FIND_BAD_DIR
+#undef MIN_MAX_FIND_GOOD_DIR
+#undef SKIP_FIND_FUNC
+#undef MIN_MAX_FIND_FUNC
 
 static inline void KV(init_tree_cntr)(KV(tree_cntr_t) * cntr, SV * cmp){
     cntr->secret = KV(secret);
     cntr->root = (KV(tree_t)*) &nil;
     cntr->newest_seg = NULL;
     cntr->free_slot = NULL;
+    cntr->ever_height = 0;
 #if I(KEY) == I(any)
     cntr->cmp = SvREFCNT_inc_simple_NN(cmp);
 #endif
 }
 
-KV(tree_t) * KV(tree_insert_subtree)(pTHX_ KV(tree_cntr_t) * cntr, KV(tree_t) * p, T(KEY) key, KV(tree_t) * new_tree, T(VALUE) value){
-    ++p->size;
-    if( K(cmp)(aTHX_ p->key, key, cntr->cmp) <= 0 ){
-        if( p->right == (KV(tree_t)*) &nil )
-            p->right = new_tree;
-        else{
-            p->right = KV(tree_insert_subtree)(aTHX_ cntr, p->right, key, new_tree, value);
-            p = (KV(tree_t)*) maintain_larger_right(p);
-        }
-    }
-    else{
-        if( p->left == (KV(tree_t)*) &nil )
-            p->left = new_tree;
-        else{
-            p->left = KV(tree_insert_subtree)(aTHX_ cntr, p->left, key, new_tree, value);
-            p = (KV(tree_t)*) maintain_larger_left(p);
-        }
-    }
-    return p;
-}
-static inline void KV(tree_insert)(pTHX_ KV(tree_cntr_t) * cntr, T(KEY) key, T(VALUE) value){
-    KV(tree_t) * new_tree = KV(allocate_cell)(cntr, key, value);
+#define INSERT_FUNC tree_insert_after
+#define INSERT_SUBTREE_FUNC tree_insert_after_subtree
+#define INSERT_CMP_OP <=
+#include "insert_gen.h"
+#undef INSERT_CMP_OP
+#undef INSERT_SUBTREE_FUNC
+#undef INSERT_FUNC
 
-    if( UNLIKELY(cntr->root == (KV(tree_t)*) &nil) ){
-        cntr->root = new_tree;
-        return;
-    }
+#define INSERT_FUNC tree_insert_before
+#define INSERT_SUBTREE_FUNC tree_insert_before_subtree
+#define INSERT_CMP_OP <
+#include "insert_gen.h"
+#undef INSERT_CMP_OP
+#undef INSERT_SUBTREE_FUNC
+#undef INSERT_FUNC
 
-    cntr->root = KV(tree_insert_subtree)(aTHX_ cntr, cntr->root, key, new_tree, value);
-}
+#define DELETE_FUNC tree_delete_last
+#define DELETE_SUBTREE_FUNC tree_delete_subtree_last
+#define DELETE_CMP_OP <=
+#define DELETE_GOOD_DIR right
+#define DELETE_BAD_DIR left
+#define DELETE_MAINTAIN_GOOD_DIR maintain_larger_right
+#define DELETE_MAINTAIN_BAD_DIR maintain_larger_left
+#include "delete_gen.h"
+#undef DELETE_MAINTAIN_BAD_DIR
+#undef DELETE_MAINTAIN_GOOD_DIR
+#undef DELETE_BAD_DIR
+#undef DELETE_GOOD_DIR
+#undef DELETE_CMP_OP
+#undef DELETE_SUBTREE_FUNC
+#undef DELETE_FUNC
 
-KV(tree_t) * KV(tree_delete_subtree)(pTHX_ KV(tree_cntr_t) * cntr, KV(tree_t) * tree, T(KEY) key){
-    KV(tree_t) * c;
-    if( K(cmp)(aTHX_ tree->key, key, cntr->cmp) <= 0 ){
-        if( tree->right == (KV(tree_t)*) &nil )
-            return NULL;
+#define DELETE_FUNC tree_delete_first
+#define DELETE_SUBTREE_FUNC tree_delete_subtree_first
+#define DELETE_CMP_OP >=
+#define DELETE_GOOD_DIR left
+#define DELETE_BAD_DIR right
+#define DELETE_MAINTAIN_GOOD_DIR maintain_larger_left
+#define DELETE_MAINTAIN_BAD_DIR maintain_larger_right
+#include "delete_gen.h"
+#undef DELETE_MAINTAIN_BAD_DIR
+#undef DELETE_MAINTAIN_GOOD_DIR
+#undef DELETE_BAD_DIR
+#undef DELETE_GOOD_DIR
+#undef DELETE_CMP_OP
+#undef DELETE_SUBTREE_FUNC
+#undef DELETE_FUNC
 
-        if( K(cmp)(aTHX_ tree->right->key, key, cntr->cmp) == 0 ){
-            tree->right = (KV(tree_t)*) maintain_larger_right(KV(tree_delete_root)(cntr, tree->right));
-            --tree->size;
-            tree = (KV(tree_t)*) maintain_larger_left(tree);
-            return tree;
-        }
+#define FIND_FUNC tree_find_first
+#define FIND_CMP_OP >=
+#define FIND_GOOD_DIR left
+#define FIND_BAD_DIR right
+#include "find_gen.h"
+#undef FIND_BAD_DIR
+#undef FIND_GOOD_DIR
+#undef FIND_CMP_OP
+#undef FIND_FUNC
 
-        c = KV(tree_delete_subtree)(aTHX_ cntr, tree->right, key);
-        if( c ){
-            tree->right = c;
-            --tree->size;
-            tree = (KV(tree_t)*) maintain_larger_left(tree);
-            return tree;
-        }
-
-        return NULL;
-    }
-    else{
-        if( tree->left == (KV(tree_t)*) &nil )
-            return NULL;
-
-        if( K(cmp)(aTHX_ tree->left->key, key, cntr->cmp) == 0 ){
-            tree->left = (KV(tree_t)*) maintain_larger_right(KV(tree_delete_root)(cntr, tree->left));
-            --tree->size;
-            tree = (KV(tree_t)*) maintain_larger_right(tree);
-            return tree;
-        }
-
-        c = KV(tree_delete_subtree)(aTHX_ cntr, tree->left, key);
-        if( c ){
-            tree->left = c;
-            --tree->size;
-            tree = (KV(tree_t)*) maintain_larger_right(tree);
-            return tree;
-        }
-
-        return NULL;
-    }
-}
-
-static inline bool KV(tree_delete)(pTHX_ KV(tree_cntr_t) * cntr, T(KEY) key){
-    if( UNLIKELY(cntr->root == (KV(tree_t)*) &nil) )
-        return FALSE;
-
-    if( K(cmp)(aTHX_ cntr->root->key, key, cntr->cmp)==0 ){
-        cntr->root = (KV(tree_t)*) maintain_larger_right(KV(tree_delete_root)(cntr, cntr->root));
-        return TRUE;
-    }
-
-    KV(tree_t) * new_root = KV(tree_delete_subtree)(aTHX_ cntr, cntr->root, key);
-    if( new_root ){
-        cntr->root = new_root;
-        return TRUE;
-    }
-    return FALSE;
-}
-
-static inline bool KV(tree_find)(pTHX_ KV(tree_cntr_t) * cntr, T(KEY) key, T(VALUE) * value_result){
-    KV(tree_t) * t = cntr->root;
-    while( t != (KV(tree_t)*) &nil ){
-        if( K(cmp)(aTHX_ t->key, key, cntr->cmp) == 0 ){
-#if I(VALUE) != I(void)
-            *value_result = t->value;
-#endif
-            return TRUE;
-        }
-        if( K(cmp)(aTHX_ t->key, key, cntr->cmp) <= 0 )
-            t = t->right;
-        else
-            t = t->left;
-    }
-    return FALSE;
-}
+#define FIND_FUNC tree_find_last
+#define FIND_CMP_OP <=
+#define FIND_GOOD_DIR right
+#define FIND_BAD_DIR left
+#include "find_gen.h"
+#undef FIND_BAD_DIR
+#undef FIND_GOOD_DIR
+#undef FIND_CMP_OP
+#undef FIND_FUNC
 
 #define FUZZY_FIND_FUNC tree_find_lt
 #define FUZZY_COUNT_FUNC tree_count_lt
-#define FUZZY_FIND_CMP_RESULT < 0
+#define FUZZY_FIND_CMP_OP <
 #define FUZZY_FIND_GOOD_DIR right
 #define FUZZY_FIND_BAD_DIR left
 #include "fuzzy_find_gen.h"
 #undef FUZZY_FIND_BAD_DIR
 #undef FUZZY_FIND_GOOD_DIR
-#undef FUZZY_FIND_CMP_RESULT
+#undef FUZZY_FIND_CMP_OP
 #undef FUZZY_COUNT_FUNC
 #undef FUZZY_FIND_FUNC
 
 #define FUZZY_FIND_FUNC tree_find_le
 #define FUZZY_COUNT_FUNC tree_count_le
-#define FUZZY_FIND_CMP_RESULT <= 0
+#define FUZZY_FIND_CMP_OP <=
 #define FUZZY_FIND_GOOD_DIR right
 #define FUZZY_FIND_BAD_DIR left
 #include "fuzzy_find_gen.h"
 #undef FUZZY_FIND_BAD_DIR
 #undef FUZZY_FIND_GOOD_DIR
-#undef FUZZY_FIND_CMP_RESULT
+#undef FUZZY_FIND_CMP_OP
 #undef FUZZY_COUNT_FUNC
 #undef FUZZY_FIND_FUNC
 
 #define FUZZY_FIND_FUNC tree_find_gt
 #define FUZZY_COUNT_FUNC tree_count_gt
-#define FUZZY_FIND_CMP_RESULT > 0
+#define FUZZY_FIND_CMP_OP >
 #define FUZZY_FIND_GOOD_DIR left
 #define FUZZY_FIND_BAD_DIR right
 #include "fuzzy_find_gen.h"
 #undef FUZZY_FIND_BAD_DIR
 #undef FUZZY_FIND_GOOD_DIR
-#undef FUZZY_FIND_CMP_RESULT
+#undef FUZZY_FIND_CMP_OP
 #undef FUZZY_COUNT_FUNC
 #undef FUZZY_FIND_FUNC
 
 #define FUZZY_FIND_FUNC tree_find_ge
 #define FUZZY_COUNT_FUNC tree_count_ge
-#define FUZZY_FIND_CMP_RESULT >= 0
+#define FUZZY_FIND_CMP_OP >=
 #define FUZZY_FIND_GOOD_DIR left
 #define FUZZY_FIND_BAD_DIR right
 #include "fuzzy_find_gen.h"
 #undef FUZZY_FIND_BAD_DIR
 #undef FUZZY_FIND_GOOD_DIR
-#undef FUZZY_FIND_CMP_RESULT
+#undef FUZZY_FIND_CMP_OP
 #undef FUZZY_COUNT_FUNC
 #undef FUZZY_FIND_FUNC
 
-void KV(tree_dump_subtree)(pTHX_ int indent, KV(tree_t) * tree){
+#define RANGE_FIND_FUNC tree_find_gt_lt
+#define RANGE_FIND_FALLBACK_FUNC tree_find_gt
+#define RANGE_FIND_CMP_L_OP >
+#define RANGE_FIND_CMP_R_OP <
+#include "range_find_gen.h"
+#undef RANGE_FIND_CMP_R_OP
+#undef RANGE_FIND_CMP_L_OP
+#undef RANGE_FIND_FALLBACK_FUNC
+#undef RANGE_FIND_FUNC
+
+#define RANGE_FIND_FUNC tree_find_ge_lt
+#define RANGE_FIND_FALLBACK_FUNC tree_find_ge
+#define RANGE_FIND_CMP_L_OP >=
+#define RANGE_FIND_CMP_R_OP <
+#include "range_find_gen.h"
+#undef RANGE_FIND_CMP_R_OP
+#undef RANGE_FIND_CMP_L_OP
+#undef RANGE_FIND_FALLBACK_FUNC
+#undef RANGE_FIND_FUNC
+
+#define RANGE_FIND_FUNC tree_find_gt_le
+#define RANGE_FIND_FALLBACK_FUNC tree_find_gt
+#define RANGE_FIND_CMP_L_OP >
+#define RANGE_FIND_CMP_R_OP <=
+#include "range_find_gen.h"
+#undef RANGE_FIND_CMP_R_OP
+#undef RANGE_FIND_CMP_L_OP
+#undef RANGE_FIND_FALLBACK_FUNC
+#undef RANGE_FIND_FUNC
+
+#define RANGE_FIND_FUNC tree_find_ge_le
+#define RANGE_FIND_FALLBACK_FUNC tree_find_ge
+#define RANGE_FIND_CMP_L_OP >=
+#define RANGE_FIND_CMP_R_OP <=
+#include "range_find_gen.h"
+#undef RANGE_FIND_CMP_R_OP
+#undef RANGE_FIND_CMP_L_OP
+#undef RANGE_FIND_FALLBACK_FUNC
+#undef RANGE_FIND_FUNC
+
+void KV(tree_dump_subtree)(pTHX_ SV * out, int indent, KV(tree_t) * tree){
     if( tree->right != (KV(tree_t)*) &nil )
-        KV(tree_dump_subtree)(aTHX_ indent+1, tree->right);
+        KV(tree_dump_subtree)(aTHX_ out, indent+1, tree->right);
     for(int i=0; i<indent; ++i)
-        PerlIO_printf(PerlIO_stdout(), "  ");
+        sv_catpvn(out, "  ", 2);
 
 #if I(KEY) == I(int)
     T(KEY) key = tree->key;
@@ -542,31 +501,32 @@ void KV(tree_dump_subtree)(pTHX_ int indent, KV(tree_t) * tree){
 #   define KEY_FMT "%s"
 #   define KEY_FMT_TYPE (char*)
 #endif
-    PerlIO_printf(PerlIO_stdout(), "(" KEY_FMT ", %d)\n", KEY_FMT_TYPE key, (int) tree->size);
+    sv_catpvf(out, "(" KEY_FMT ", %d)\n", KEY_FMT_TYPE key, (int) tree->size);
 #undef KEY_FMT_TYPE
 #undef KEY_FMT
 
     if( tree->left != (KV(tree_t)*) &nil )
-        KV(tree_dump_subtree)(aTHX_ indent+1, tree->left);
+        KV(tree_dump_subtree)(aTHX_ out, indent+1, tree->left);
 }
-static inline void KV(tree_dump)(pTHX_ KV(tree_cntr_t) * cntr){
-    if( cntr->root == (KV(tree_t)*) &nil ){
-        puts("(empty tree)");
-        return;
-    }
-    KV(tree_dump_subtree)(aTHX_ 0, cntr->root);
+static inline SV* KV(tree_dump)(pTHX_ KV(tree_cntr_t) * cntr){
+    if( cntr->root == (KV(tree_t)*) &nil )
+        return newSVpvn("(empty tree)", 12);
+
+    SV * out = newSVpvn("", 0);
+    KV(tree_dump_subtree)(aTHX_ out, 0, cntr->root);
+    return out;
 }
 
 // 假設 tree 不是空的
-bool KV(tree_check_subtree_order)(pTHX_ KV(tree_cntr_t) * cntr, KV(tree_t) * tree){
-    if( tree->left != (KV(tree_t)*) &nil && (K(cmp)(aTHX_ tree->left->key, tree->key, cntr->cmp) > 0 || !KV(tree_check_subtree_order)(aTHX_ cntr, tree->left)) )
+bool KV(tree_check_subtree_order)(pTHX_ SV**SP, KV(tree_cntr_t) * cntr, KV(tree_t) * tree){
+    if( tree->left != (KV(tree_t)*) &nil && (K(cmp)(aTHX_ SP, tree->left->key, tree->key, cntr->cmp) > 0 || !KV(tree_check_subtree_order)(aTHX_ SP, cntr, tree->left)) )
         return FALSE;
-    if( tree->right != (KV(tree_t)*) &nil && (K(cmp)(aTHX_ tree->key, tree->right->key, cntr->cmp) > 0 || !KV(tree_check_subtree_order)(aTHX_ cntr, tree->right)) )
+    if( tree->right != (KV(tree_t)*) &nil && (K(cmp)(aTHX_ SP, tree->key, tree->right->key, cntr->cmp) > 0 || !KV(tree_check_subtree_order)(aTHX_ SP, cntr, tree->right)) )
         return FALSE;
     return TRUE;
 }
-static inline bool KV(tree_check_order)(pTHX_ KV(tree_cntr_t) * cntr){
+static inline bool KV(tree_check_order)(pTHX_ SV**SP, KV(tree_cntr_t) * cntr){
     if( cntr->root == (KV(tree_t)*) &nil )
         return TRUE;
-    return KV(tree_check_subtree_order)(aTHX_ cntr, cntr->root);
+    return KV(tree_check_subtree_order)(aTHX_ SP, cntr, cntr->root);
 }

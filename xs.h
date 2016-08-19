@@ -1,6 +1,6 @@
 // vim: filetype=xs
 
-SV ** KV(new)(pTHX_ SV ** SP, SV * class, SV * cmp){
+inline static SV ** KV(new)(pTHX_ SV ** SP, SV * class, SV * cmp){
     KV(tree_cntr_t) * cntr;
     Newx(cntr, 1, KV(tree_cntr_t));
     cntr->secret = KV(secret);
@@ -20,7 +20,7 @@ SV ** KV(new)(pTHX_ SV ** SP, SV * class, SV * cmp){
     return SP;
 }
 
-SV ** KV(DESTROY)(pTHX_ SV ** SP, SV * obj){
+inline static SV ** KV(DESTROY)(pTHX_ SV ** SP, SV * obj){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
     KV(empty_tree_cntr)(aTHX_ cntr);
     Safefree(cntr);
@@ -28,24 +28,45 @@ SV ** KV(DESTROY)(pTHX_ SV ** SP, SV * obj){
     return SP;
 }
 
-SV ** KV(size)(pTHX_ SV** SP, SV *obj){
+inline static SV ** KV(size)(pTHX_ SV** SP, SV *obj){
     dXSTARG;
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
     PUSHu((UV) KV(tree_size)(cntr));
     return SP;
 }
 
-SV ** KV(insert)(pTHX_ SV** SP, SV * obj, SV * key, SV * value){
+inline static SV ** KV(ever_height)(pTHX_ SV** SP, SV *obj){
+    dXSTARG;
+    KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
+    PUSHu((UV) cntr->ever_height);
+    return SP;
+}
+
+inline static SV ** KV(insert_before)(pTHX_ SV** SP, SV * obj, SV * key, SV * value){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
 
     save_scalar(a_GV);
     save_scalar(b_GV);
 
-    KV(tree_insert)(aTHX_ cntr, K(copy_sv)(aTHX_ key), V(copy_sv)(aTHX_ value));
+    KV(tree_insert_before)(aTHX_ SP, cntr, K(copy_sv)(aTHX_ key), V(copy_sv)(aTHX_ value));
     return SP;
 }
 
-SV ** KV(delete)(pTHX_ SV** SP, SV * obj, SV * key){
+inline static SV ** KV(insert_after)(pTHX_ SV** SP, SV * obj, SV * key, SV * value){
+    KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
+
+    save_scalar(a_GV);
+    save_scalar(b_GV);
+
+    KV(tree_insert_after)(aTHX_ SP, cntr, K(copy_sv)(aTHX_ key), V(copy_sv)(aTHX_ value));
+    return SP;
+}
+
+inline static SV ** KV(insert)(pTHX_ SV** SP, SV * obj, SV * key, SV * value){
+    return KV(insert_after)(aTHX_ SP, obj, key, value);
+}
+
+inline static SV ** KV(delete_first)(pTHX_ SV** SP, SV * obj, SV * key){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
 
     save_scalar(a_GV);
@@ -54,7 +75,7 @@ SV ** KV(delete)(pTHX_ SV** SP, SV * obj, SV * key){
     SvREFCNT_inc_simple_void_NN(key);
 #endif
 
-    if( KV(tree_delete)(aTHX_ cntr, K(from_sv)(aTHX_ key)) )
+    if( KV(tree_delete_first)(aTHX_ SP, cntr, K(from_sv)(aTHX_ key)) )
         PUSHs(&PL_sv_yes);
     else
         PUSHs(&PL_sv_no);
@@ -69,7 +90,7 @@ SV ** KV(delete)(pTHX_ SV** SP, SV * obj, SV * key){
     return SP;
 }
 
-SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
+inline static SV ** KV(delete_last)(pTHX_ SV** SP, SV * obj, SV * key){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
 
     save_scalar(a_GV);
@@ -78,13 +99,8 @@ SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
     SvREFCNT_inc_simple_void_NN(key);
 #endif
 
-    T(VALUE) value_result;
-    if( KV(tree_find)(aTHX_ cntr, K(from_sv)(aTHX_ key), &value_result) ){
+    if( KV(tree_delete_last)(aTHX_ SP, cntr, K(from_sv)(aTHX_ key)) )
         PUSHs(&PL_sv_yes);
-#if I(VALUE) != I(void)
-        SP = V(ret)(aTHX_ SP, value_result);
-#endif
-    }
     else
         PUSHs(&PL_sv_no);
 
@@ -96,6 +112,56 @@ SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
 #   endif
 #endif
     return SP;
+}
+
+inline static SV ** KV(delete)(pTHX_ SV** SP, SV * obj, SV * key){
+    return KV(delete_last)(aTHX_ SP, obj, key);
+}
+
+inline static SV ** KV(find_first)(pTHX_ SV** SP, SV * obj, SV * key, int limit){
+    KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
+
+    save_scalar(a_GV);
+    save_scalar(b_GV);
+#if I(KEY) == I(any)
+    SvREFCNT_inc_simple_void_NN(key);
+#endif
+
+    SP = KV(tree_find_first)(aTHX_ SP, cntr, K(from_sv)(aTHX_ key), limit);
+
+#if I(KEY) == I(any)
+#   ifdef SvREFCNT_dec_NN
+    SvREFCNT_dec_NN(key);
+#   else
+    SvREFCNT_dec(key);
+#   endif
+#endif
+    return SP;
+}
+
+inline static SV ** KV(find_last)(pTHX_ SV** SP, SV * obj, SV * key, int limit){
+    KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
+
+    save_scalar(a_GV);
+    save_scalar(b_GV);
+#if I(KEY) == I(any)
+    SvREFCNT_inc_simple_void_NN(key);
+#endif
+
+    SP = KV(tree_find_last)(aTHX_ SP, cntr, K(from_sv)(aTHX_ key), limit);
+
+#if I(KEY) == I(any)
+#   ifdef SvREFCNT_dec_NN
+    SvREFCNT_dec_NN(key);
+#   else
+    SvREFCNT_dec(key);
+#   endif
+#endif
+    return SP;
+}
+
+inline static SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key, int limit){
+    return KV(find_first)(aTHX_ SP, obj, key, limit);
 }
 
 #define XS_FUZZY_FIND_FUNC find_lt
@@ -146,73 +212,74 @@ SV ** KV(find)(pTHX_ SV** SP, SV * obj, SV * key){
 #undef FUZZY_COUNT_FUNC
 #undef XS_FUZZY_COUNT_FUNC
 
-SV ** KV(find_min)(pTHX_ SV** SP, SV * obj){
+#define XS_RANGE_FIND_FUNC find_gt_lt
+#define RANGE_FIND_FUNC tree_find_gt_lt
+#define RANGE_FIND_FALLBACK_FUNC tree_find_gt
+#include "xs_range_find_gen.h"
+#undef RANGE_FIND_FALLBACK_FUNC
+#undef RANGE_FIND_FUNC
+#undef XS_RANGE_FIND_FUNC
+
+#define XS_RANGE_FIND_FUNC find_ge_lt
+#define RANGE_FIND_FUNC tree_find_ge_lt
+#define RANGE_FIND_FALLBACK_FUNC tree_find_ge
+#include "xs_range_find_gen.h"
+#undef RANGE_FIND_FALLBACK_FUNC
+#undef RANGE_FIND_FUNC
+#undef XS_RANGE_FIND_FUNC
+
+#define XS_RANGE_FIND_FUNC find_gt_le
+#define RANGE_FIND_FUNC tree_find_gt_le
+#define RANGE_FIND_FALLBACK_FUNC tree_find_gt
+#include "xs_range_find_gen.h"
+#undef RANGE_FIND_FALLBACK_FUNC
+#undef RANGE_FIND_FUNC
+#undef XS_RANGE_FIND_FUNC
+
+#define XS_RANGE_FIND_FUNC find_ge_le
+#define RANGE_FIND_FUNC tree_find_ge_le
+#define RANGE_FIND_FALLBACK_FUNC tree_find_ge
+#include "xs_range_find_gen.h"
+#undef RANGE_FIND_FALLBACK_FUNC
+#undef RANGE_FIND_FUNC
+#undef XS_RANGE_FIND_FUNC
+
+inline static SV ** KV(find_min)(pTHX_ SV** SP, SV * obj, int limit){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
-    if( KV(tree_size)(cntr) == 0 )
-        PUSHs(&PL_sv_undef);
-    else{
-        T(VALUE) value_result;
-        SP = K(ret)(aTHX_ SP, KV(tree_find_min)(cntr, &value_result));
-#if I(VALUE) != I(void)
-        if( GIMME_V == G_ARRAY )
-            SP = V(mret)(aTHX_ SP, value_result);
-#endif
-    }
+    if( KV(tree_size)(cntr) != 0 )
+        SP = KV(tree_find_min)(aTHX_ SP, cntr, limit);
     return SP;
 }
 
-SV ** KV(find_max)(pTHX_ SV** SP, SV * obj){
+inline static SV ** KV(find_max)(pTHX_ SV** SP, SV * obj, int limit){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
-    if( KV(tree_size)(cntr) == 0 )
-        PUSHs(&PL_sv_undef);
-    else{
-        T(VALUE) value_result;
-        SP = K(ret)(aTHX_ SP, KV(tree_find_max)(cntr, &value_result));
-#if I(VALUE) != I(void)
-        if( GIMME_V == G_ARRAY )
-            SP = V(mret)(aTHX_ SP, value_result);
-#endif
-    }
+    if( KV(tree_size)(cntr) != 0 )
+        SP = KV(tree_find_max)(aTHX_ SP, cntr, limit);
     return SP;
 }
 
-SV ** KV(skip_l)(pTHX_ SV** SP, SV * obj, int offset){
+inline static SV ** KV(skip_l)(pTHX_ SV** SP, SV * obj, int offset, int limit){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
-    if( offset < 0 || offset >= KV(tree_size)(cntr) )
-        PUSHs(&PL_sv_undef);
-    else{
-        T(VALUE) value_result;
-        SP = K(ret)(aTHX_ SP, KV(tree_skip_l)(cntr, offset, &value_result));
-#if I(VALUE) != I(void)
-        if( GIMME_V == G_ARRAY )
-            SP = V(mret)(aTHX_ SP, value_result);
-#endif
-    }
+    if( 0 <= offset && offset < KV(tree_size)(cntr) )
+        SP = KV(tree_skip_l)(aTHX_ SP, cntr, offset, limit);
     return SP;
 }
 
-SV ** KV(skip_g)(pTHX_ SV** SP, SV * obj, int offset){
+inline static SV ** KV(skip_g)(pTHX_ SV** SP, SV * obj, int offset, int limit){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
-    if( offset < 0 || offset >= KV(tree_size)(cntr) )
-        PUSHs(&PL_sv_undef);
-    else{
-        T(VALUE) value_result;
-        SP = K(ret)(aTHX_ SP, KV(tree_skip_g)(cntr, offset, &value_result));
-#if I(VALUE) != I(void)
-        if( GIMME_V == G_ARRAY )
-            SP = V(mret)(aTHX_ SP, value_result);
-#endif
-    }
+    if( 0 <= offset && offset < KV(tree_size)(cntr) )
+        SP = KV(tree_skip_g)(aTHX_ SP, cntr, offset, limit);
     return SP;
 }
 
-SV ** KV(dump)(pTHX_ SV** SP, SV *obj){
+inline static SV ** KV(dump)(pTHX_ SV** SP, SV *obj){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
-    KV(tree_dump)(aTHX_ cntr);
+    SV * out = KV(tree_dump)(aTHX_ cntr);
+    PUSHs(sv_2mortal(out));
     return SP;
 }
 
-SV ** KV(check)(pTHX_ SV** SP, SV * obj){
+inline static SV ** KV(check)(pTHX_ SV** SP, SV * obj){
     KV(tree_cntr_t) * cntr = KV(assure_tree_cntr)(obj);
 
     save_scalar(a_GV);
@@ -220,7 +287,7 @@ SV ** KV(check)(pTHX_ SV** SP, SV * obj){
 
     EXTEND(SP, 3);
 
-    if( KV(tree_check_order)(aTHX_ cntr) )
+    if( KV(tree_check_order)(aTHX_ SP, cntr) )
         PUSHs(&PL_sv_yes);
     else
         PUSHs(&PL_sv_no);
