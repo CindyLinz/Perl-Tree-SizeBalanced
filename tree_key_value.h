@@ -5,9 +5,9 @@ const long long KV(secret) = 5673533590968723872LL + I(KEY) * 64 + I(VALUE);
 
 typedef union KV(tree_t) {
     struct {
-        T(KEY) key;
         union KV(tree_t) *left, *right;
         IV size;
+        T(KEY) key;
 #if I(VALUE) != I(void)
         T(VALUE) value;
 #endif

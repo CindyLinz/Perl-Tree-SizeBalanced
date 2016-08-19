@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+2.003000    2016.8.20
+            reorder key field to fix polymorphic type function error
+
 2.002000    2016.8.19
             fix incorrect Export
 
