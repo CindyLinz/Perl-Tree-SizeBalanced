@@ -34,9 +34,9 @@ Handy for in-memory realtime ranking systems.
 
     ...
 
-    my $count = $tree->count_l(25);
+    my $count = $tree->count_lt(25);
     # how many entries in the tree whose key is less than 25
-    my $count = $tree->count_g(25);
+    my $count = $tree->count_gt(25);
     # how many entries in the tree whose key is greater than 25
 
     ($key, $value) = $tree->skip_l(23);
