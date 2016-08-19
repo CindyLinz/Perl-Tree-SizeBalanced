@@ -302,8 +302,8 @@ sub $short($proto) {
 
 push \@EXPORT_OK, qw($long $short);
 push \@{\$EXPORT_TAGS{'all'}}, qw($long $short);
-push \@{\$EXPORT_TAGS{'short'}}, qw($long);
-push \@{\$EXPORT_TAGS{'long'}}, qw($short);
+push \@{\$EXPORT_TAGS{'short'}}, qw($short);
+push \@{\$EXPORT_TAGS{'long'}}, qw($long);
 
 .
         }

@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+2.002000    2016.8.19
+            fix incorrect Export
+
 2.001001    2016.8.19
             fix document
 
