@@ -20,7 +20,7 @@ our @ISA = qw(Exporter);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 
-our $VERSION = '1.003000';
+our $VERSION = '1.004000';
 
 =head1 NAME
 

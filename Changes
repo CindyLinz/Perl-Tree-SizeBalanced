@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+1.004000    2016.8.20
+            reorder struct field to fix polymorphic function bug
+
 1.003000    2016.8.15
             add default type constructor, MANIFEST generated SizeBalanced.pm file for cpan document
 
