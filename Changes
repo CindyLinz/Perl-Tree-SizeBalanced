@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+2.004000    2016.8.20
+            c compiler option -std=c99 -> -std=gnu99 for unnamed union
+
 2.003000    2016.8.20
             reorder key field to fix polymorphic type function error
 
