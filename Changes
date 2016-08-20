@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+2.005000    2016.8.20
+            c compiler option -std=gnu99 -> -std=c11 for ISO compiler
+
 2.004000    2016.8.20
             c compiler option -std=c99 -> -std=gnu99 for unnamed union
 
