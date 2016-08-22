@@ -3,16 +3,13 @@
 const U32 KV(secret) = 968723872 + I(KEY) * 64 + I(VALUE);
 
 
-typedef union KV(tree_t) {
-    struct {
-        union KV(tree_t) *left, *right;
-        IV size;
-        T(KEY) key;
+typedef struct KV(tree_t) {
+    struct KV(tree_t) *left, *right;
+    IV size;
+    T(KEY) key;
 #if I(VALUE) != I(void)
-        T(VALUE) value;
+    T(VALUE) value;
 #endif
-    };
-    union KV(tree_t) * free_slot;
 } KV(tree_t);
 
 typedef struct KV(tree_seg_t) {
@@ -56,13 +53,13 @@ static inline KV(tree_cntr_t) * KV(assure_tree_cntr)(SV * obj){
     return cntr;
 }
 
-// 把所有的 cell 以 free_slot 串起來, 最後一個指向 NULL
+// 把所有的 cell 以 left 串起來, 最後一個指向 NULL
 // return 開頭的 cell
 static inline KV(tree_t) * KV(init_tree_seg)(KV(tree_seg_t) * seg, KV(tree_seg_t) * prev){
     seg->prev_seg = prev;
-    seg->cell[SEG_SIZE-1].free_slot = NULL;
+    seg->cell[SEG_SIZE-1].left = NULL;
     for(int i=SEG_SIZE-2; i>=0; --i)
-        seg->cell[i].free_slot = &seg->cell[i+1];
+        seg->cell[i].left = &seg->cell[i+1];
     return &seg->cell[0];
 }
 
@@ -179,7 +176,7 @@ static inline KV(tree_t) * KV(allocate_cell)(KV(tree_cntr_t) * cntr, T(KEY) key,
         cntr->newest_seg = new_seg;
     }
     KV(tree_t) * new_cell = cntr->free_slot;
-    cntr->free_slot = new_cell->free_slot;
+    cntr->free_slot = new_cell->left;
 
     new_cell->left = new_cell->right = (KV(tree_t)*) &nil;
     new_cell->size = 1;
@@ -192,7 +189,7 @@ static inline KV(tree_t) * KV(allocate_cell)(KV(tree_cntr_t) * cntr, T(KEY) key,
 }
 
 static inline void KV(free_cell)(KV(tree_cntr_t) * cntr, KV(tree_t) * cell){
-    cell->free_slot = cntr->free_slot;
+    cell->left = cntr->free_slot;
     cntr->free_slot = cell;
 }
 
@@ -200,7 +197,7 @@ static inline void KV(empty_tree_cntr)(pTHX_ KV(tree_cntr_t) * cntr){
 #if I(KEY) == I(str) || I(KEY) == I(any) || I(VALUE) == I(str) || I(VALUE) == I(any)
     KV(tree_t) * free_slot = cntr->free_slot;
     while( free_slot ){
-        KV(tree_t) * next_free_slot = free_slot->free_slot;
+        KV(tree_t) * next_free_slot = free_slot->left;
 #   if I(KEY) == I(str) || I(KEY) == I(any)
         free_slot->key = NULL;
 #   endif
