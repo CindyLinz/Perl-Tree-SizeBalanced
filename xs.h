@@ -3,7 +3,8 @@
 inline static SV ** KV(new)(pTHX_ SV ** SP, SV * class, SV * cmp){
     KV(tree_cntr_t) * cntr;
     Newx(cntr, 1, KV(tree_cntr_t));
-    cntr->secret = KV(secret);
+    cntr->sv_refcnt = KV(secret);
+    cntr->sv_flags = SVt_NULL;
     KV(init_tree_cntr)(cntr, cmp);
 
     SV * ret = newSV(0);

@@ -1,6 +1,6 @@
 // vim: filetype=xs
 
-const long long KV(secret) = 5673533590968723872LL + I(KEY) * 64 + I(VALUE);
+const U32 KV(secret) = 968723872 + I(KEY) * 64 + I(VALUE);
 
 
 typedef union KV(tree_t) {
@@ -22,7 +22,9 @@ typedef struct KV(tree_seg_t) {
 } KV(tree_seg_t);
 
 typedef struct KV(tree_cntr_t) {
-    long long secret;
+    void * sv_any;
+    U32 sv_refcnt;
+    U32 sv_flags;
     SV* cmp;
     KV(tree_t) * root; // (init 後, empty 前) 永不為空, 一開始指向 nil
     KV(tree_t) * free_slot;
@@ -48,8 +50,8 @@ static inline KV(tree_cntr_t) * KV(assure_tree_cntr)(SV * obj){
     if( !cntr )
         croak("assure_tree_cntr: NULL cntr");
 
-    if( cntr->secret != KV(secret) )
-        croak("assure_tree_cntr: unmatched secret %lld against %lld", cntr->secret, KV(secret));
+    if( cntr->sv_refcnt != KV(secret) )
+        croak("assure_tree_cntr: unmatched secret %u against %u", cntr->sv_refcnt, KV(secret));
 
     return cntr;
 }
@@ -316,7 +318,7 @@ static inline int KV(tree_size)(KV(tree_cntr_t) * cntr){
 #undef MIN_MAX_FIND_FUNC
 
 static inline void KV(init_tree_cntr)(KV(tree_cntr_t) * cntr, SV * cmp){
-    cntr->secret = KV(secret);
+    cntr->sv_refcnt = KV(secret);
     cntr->root = (KV(tree_t)*) &nil;
     cntr->newest_seg = NULL;
     cntr->free_slot = NULL;
