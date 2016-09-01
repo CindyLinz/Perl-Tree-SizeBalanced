@@ -20,7 +20,7 @@ our @ISA = qw(Exporter);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 
-our $VERSION = '2.006001';
+our $VERSION = '2.006002';
 
 =head1 NAME
 
@@ -168,7 +168,7 @@ equivalent to C<$tree = sbtreeaa>
 
 test result: (perl 5.22.2, Tree::SizeBalanced 2.6)
 
-L<incremental integer query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/incremental_integer_query.pl> seed_count=10, data_size=100_000, verbose=0
+L<incremental integer query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/blob/master/benchmark/incremental_integer_query.pl> seed_count=10, data_size=100_000, verbose=0
 
     Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
     Sorted array: 12 wallclock secs (12.60 usr +  0.00 sys = 12.60 CPU) @  0.08/s (n=1)
@@ -183,7 +183,7 @@ L<incremental integer query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/
 
     (Note that "Static array" didn't complete. It's interrupted)
 
-L<incremental string query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/incremental_string_query.pl> seed_count=10, data_size=100_000, verbose=0
+L<incremental string query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/blob/master/benchmark/incremental_string_query.pl> seed_count=10, data_size=100_000, verbose=0
 
     Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set str...
     Sorted array: 15 wallclock secs (15.28 usr +  0.00 sys = 15.28 CPU) @  0.07/s (n=1)
@@ -198,7 +198,7 @@ L<incremental string query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/b
 
     (Note that "Static array" didn't complete. It's interrupted)
 
-L<bulk integer query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/bulk_integer_query.pl> seed_count=10, data_size=100_000, verbose=0
+L<bulk integer query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/blob/master/benchmark/bulk_integer_query.pl> seed_count=10, data_size=100_000, verbose=0
 
     Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
     Sorted array:  3 wallclock secs ( 2.99 usr +  0.00 sys =  2.99 CPU) @  0.33/s (n=1)
@@ -213,7 +213,7 @@ L<bulk integer query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchma
 
     (Note that "Static array" didn't complete. It's interrupted)
 
-L<bulk string query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/bulk_string_query.pl> seed_count=10, data_size=100_000, verbose=0
+L<bulk string query|https://github.com/CindyLinz/Perl-Tree-SizeBalanced/blob/master/benchmark/bulk_string_query.pl> seed_count=10, data_size=100_000, verbose=0
 
     Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
     Sorted array:  5 wallclock secs ( 5.59 usr +  0.00 sys =  5.59 CPU) @  0.18/s (n=1)

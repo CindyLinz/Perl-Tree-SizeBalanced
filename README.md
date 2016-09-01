@@ -2770,7 +2770,7 @@ Tree map with key type any scalars and value type any scalars.
 
 test result: (perl 5.22.2, Tree::SizeBalanced 2.6)
 
-[incremental integer query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/incremental_integer_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
+[incremental integer query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/blob/master/benchmark/incremental_integer_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
 
     Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
     Sorted array: 12 wallclock secs (12.60 usr +  0.00 sys = 12.60 CPU) @  0.08/s (n=1)
@@ -2785,7 +2785,7 @@ test result: (perl 5.22.2, Tree::SizeBalanced 2.6)
 
     (Note that "Static array" didn't complete. It's interrupted)
 
-[incremental string query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/incremental_string_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
+[incremental string query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/blob/master/benchmark/incremental_string_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
 
     Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set str...
     Sorted array: 15 wallclock secs (15.28 usr +  0.00 sys = 15.28 CPU) @  0.07/s (n=1)
@@ -2800,7 +2800,7 @@ test result: (perl 5.22.2, Tree::SizeBalanced 2.6)
 
     (Note that "Static array" didn't complete. It's interrupted)
 
-[bulk integer query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/bulk_integer_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
+[bulk integer query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/blob/master/benchmark/bulk_integer_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
 
     Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
     Sorted array:  3 wallclock secs ( 2.99 usr +  0.00 sys =  2.99 CPU) @  0.33/s (n=1)
@@ -2815,7 +2815,7 @@ test result: (perl 5.22.2, Tree::SizeBalanced 2.6)
 
     (Note that "Static array" didn't complete. It's interrupted)
 
-[bulk string query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/bulk_string_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
+[bulk string query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/blob/master/benchmark/bulk_string_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
 
     Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
     Sorted array:  5 wallclock secs ( 5.59 usr +  0.00 sys =  5.59 CPU) @  0.18/s (n=1)

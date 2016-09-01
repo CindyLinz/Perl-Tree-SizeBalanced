@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+2.006002    2016.9.2
+            Fix link url in the document.
+
 2.006001    2016.9.2
             Add benchmark/, and add benchmark result into document.
 
