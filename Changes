@@ -1,5 +1,8 @@
 Revision history for Perl extension Tree::SizeBalanced.
 
+2.006001    2016.9.2
+            Add benchmark/, and add benchmark result into document.
+
 2.006000    2016.8.22
             rearrange cntr field order to avoid tiny crash probability with Data::Dumper
             remove unnamed struct and union for older c compiler

@@ -23,3 +23,7 @@ xs_fuzzy_count_gen.h
 xs_fuzzy_find_gen.h
 xs.h
 xs_range_find_gen.h
+benchmark/bulk_integer_query.pl
+benchmark/bulk_string_query.pl
+benchmark/incremental_integer_query.pl
+benchmark/incremental_string_query.pl

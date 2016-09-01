@@ -2766,6 +2766,70 @@ Tree map with key type any scalars and value type any scalars.
 
     equivalent to `$tree = sbtreeaa`
 
+# BENCHMARK
+
+test result: (perl 5.22.2, Tree::SizeBalanced 2.6)
+
+[incremental integer query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/incremental_integer_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
+
+    Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
+    Sorted array: 12 wallclock secs (12.60 usr +  0.00 sys = 12.60 CPU) @  0.08/s (n=1)
+                (warning: too few iterations for a reliable count)
+    ^CSIGINT!
+    Static array: 737 wallclock secs (736.96 usr +  0.14 sys = 737.10 CPU) @  0.00/s (n=1)
+                (warning: too few iterations for a reliable count)
+    tree set any:  5 wallclock secs ( 4.70 usr +  0.01 sys =  4.71 CPU) @  0.21/s (n=1)
+                (warning: too few iterations for a reliable count)
+    tree set int:  1 wallclock secs ( 0.69 usr +  0.01 sys =  0.70 CPU) @  1.43/s (n=1)
+                (warning: too few iterations for a reliable count)
+
+    (Note that "Static array" didn't complete. It's interrupted)
+
+[incremental string query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/incremental_string_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
+
+    Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set str...
+    Sorted array: 15 wallclock secs (15.28 usr +  0.00 sys = 15.28 CPU) @  0.07/s (n=1)
+                (warning: too few iterations for a reliable count)
+    ^CSIGINT!
+    Static array: 673 wallclock secs (672.08 usr +  0.15 sys = 672.23 CPU) @  0.00/s (n=1)
+                (warning: too few iterations for a reliable count)
+    tree set any:  6 wallclock secs ( 6.65 usr +  0.00 sys =  6.65 CPU) @  0.15/s (n=1)
+                (warning: too few iterations for a reliable count)
+    tree set str:  2 wallclock secs ( 1.88 usr +  0.00 sys =  1.88 CPU) @  0.53/s (n=1)
+                (warning: too few iterations for a reliable count)
+
+    (Note that "Static array" didn't complete. It's interrupted)
+
+[bulk integer query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/bulk_integer_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
+
+    Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
+    Sorted array:  3 wallclock secs ( 2.99 usr +  0.00 sys =  2.99 CPU) @  0.33/s (n=1)
+                (warning: too few iterations for a reliable count)
+    ^CSIGINT!
+    Static array: 251 wallclock secs (251.85 usr +  0.02 sys = 251.87 CPU) @  0.00/s (n=1)
+                (warning: too few iterations for a reliable count)
+    tree set any:  6 wallclock secs ( 5.24 usr +  0.00 sys =  5.24 CPU) @  0.19/s (n=1)
+                (warning: too few iterations for a reliable count)
+    tree set int:  1 wallclock secs ( 0.86 usr +  0.00 sys =  0.86 CPU) @  1.16/s (n=1)
+                (warning: too few iterations for a reliable count)
+
+    (Note that "Static array" didn't complete. It's interrupted)
+
+[bulk string query](https://github.com/CindyLinz/Perl-Tree-SizeBalanced/benchmark/bulk_string_query.pl) seed\_count=10, data\_size=100\_000, verbose=0
+
+    Benchmark: timing 1 iterations of Sorted array, Static array, tree set any, tree set int...
+    Sorted array:  5 wallclock secs ( 5.59 usr +  0.00 sys =  5.59 CPU) @  0.18/s (n=1)
+                (warning: too few iterations for a reliable count)
+    ^CSIGINT!
+    Static array: 363 wallclock secs (361.56 usr +  0.07 sys = 361.63 CPU) @  0.00/s (n=1)
+                (warning: too few iterations for a reliable count)
+    tree set any:  8 wallclock secs ( 7.85 usr +  0.00 sys =  7.85 CPU) @  0.13/s (n=1)
+                (warning: too few iterations for a reliable count)
+    tree set int:  3 wallclock secs ( 3.27 usr +  0.01 sys =  3.28 CPU) @  0.30/s (n=1)
+                (warning: too few iterations for a reliable count)
+
+    (Note that "Static array" didn't complete. It's interrupted)
+
 # SEE ALSO
 
 This mod's github [https://github.com/CindyLinz/Perl-Tree-SizeBalanced](https://github.com/CindyLinz/Perl-Tree-SizeBalanced).
